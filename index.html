@@ -1,375 +1,544 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>リマインダー</title>
+  <title>こどもレジ</title>
   <meta name="apple-mobile-web-app-capable" content="yes"/>
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
-  <meta name="apple-mobile-web-app-title" content="リマインダー"/>
+  <meta name="apple-mobile-web-app-title" content="こどもレジ"/>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
+
     body {
-      background: #0f0f0f;
-      color: #e0e0e0;
+      background: #1a1a2e;
+      color: #fff;
       font-family: -apple-system, sans-serif;
       min-height: 100vh;
-      padding: 24px 16px;
-    }
-    h1 {
-      font-size: 24px;
-      font-weight: 700;
-      margin-bottom: 24px;
-      color: #ffffff;
-    }
-    .card {
-      background: #1c1c1e;
-      border-radius: 16px;
-      padding: 20px;
-      margin-bottom: 16px;
-    }
-    label {
-      display: block;
-      font-size: 12px;
-      color: #888;
-      margin-bottom: 6px;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-    }
-    input[type="text"],
-    input[type="time"],
-    select {
-      width: 100%;
-      background: #2c2c2e;
-      border: none;
-      border-radius: 10px;
-      color: #e0e0e0;
-      font-size: 16px;
-      padding: 12px 14px;
-      margin-bottom: 14px;
-      outline: none;
-      appearance: none;
-    }
-    input[type="date"] {
-      width: 100%;
-      background: #2c2c2e;
-      border: none;
-      border-radius: 10px;
-      color: #e0e0e0;
-      font-size: 16px;
-      padding: 12px 14px;
-      margin-bottom: 14px;
-      outline: none;
-      appearance: none;
-    }
-    button.add-btn {
-      width: 100%;
-      background: #3a82f7;
-      color: #fff;
-      border: none;
-      border-radius: 12px;
-      font-size: 16px;
-      font-weight: 600;
-      padding: 14px;
-      cursor: pointer;
-      transition: background 0.2s;
-    }
-    button.add-btn:active { background: #2563c7; }
-
-    .reminder-list { margin-top: 8px; }
-    .reminder-item {
-      background: #1c1c1e;
-      border-radius: 14px;
-      padding: 16px;
-      margin-bottom: 12px;
       display: flex;
-      justify-content: space-between;
+      flex-direction: column;
       align-items: center;
+      overflow: hidden;
     }
-    .reminder-info { flex: 1; }
-    .reminder-title {
-      font-size: 16px;
-      font-weight: 600;
+
+    /* ヘッダー */
+    .header {
+      width: 100%;
+      padding: 20px 24px 12px;
+      background: linear-gradient(180deg, #16213e 0%, transparent 100%);
+      text-align: center;
+    }
+    .header h1 {
+      font-size: 22px;
+      font-weight: 800;
+      letter-spacing: 2px;
       color: #fff;
+    }
+    .header h1 span { color: #f9ca24; }
+
+    /* カメラ */
+    .camera-wrap {
+      position: relative;
+      width: 100%;
+      max-width: 420px;
+      aspect-ratio: 4/3;
+      overflow: hidden;
+      border-radius: 0 0 32px 32px;
+      background: #000;
+    }
+    video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+    canvas#diffCanvas { display: none; }
+
+    /* スキャン枠 */
+    .scan-frame {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      pointer-events: none;
+    }
+    .scan-box {
+      width: 160px;
+      height: 160px;
+      position: relative;
+    }
+    .scan-box::before,
+    .scan-box::after,
+    .scan-box .corner-bl,
+    .scan-box .corner-br {
+      content: '';
+      position: absolute;
+      width: 32px;
+      height: 32px;
+      border-color: #f9ca24;
+      border-style: solid;
+    }
+    .scan-box::before { top: 0; left: 0; border-width: 4px 0 0 4px; border-radius: 4px 0 0 0; }
+    .scan-box::after  { top: 0; right: 0; border-width: 4px 4px 0 0; border-radius: 0 4px 0 0; }
+    .scan-box .corner-bl { bottom: 0; left: 0; border-width: 0 0 4px 4px; border-radius: 0 0 0 4px; }
+    .scan-box .corner-br { bottom: 0; right: 0; border-width: 0 4px 4px 0; border-radius: 0 0 4px 0; }
+
+    /* スキャンライン */
+    .scan-line {
+      position: absolute;
+      left: 10%;
+      width: 80%;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, #f9ca24, transparent);
+      top: 50%;
+      animation: scanMove 2s ease-in-out infinite;
+    }
+    @keyframes scanMove {
+      0%,100% { top: 15%; opacity: 0.3; }
+      50% { top: 85%; opacity: 1; }
+    }
+
+    /* 検知フラッシュ */
+    .flash {
+      position: absolute;
+      inset: 0;
+      background: rgba(249,202,36,0.35);
+      opacity: 0;
+      border-radius: 0 0 32px 32px;
+      transition: opacity 0.1s;
+      pointer-events: none;
+    }
+    .flash.active { opacity: 1; }
+
+    /* 追加金額ポップ */
+    .price-pop {
+      position: absolute;
+      top: 30%;
+      left: 50%;
+      transform: translateX(-50%) scale(0);
+      background: #f9ca24;
+      color: #1a1a2e;
+      font-size: 28px;
+      font-weight: 900;
+      padding: 10px 24px;
+      border-radius: 50px;
+      white-space: nowrap;
+      pointer-events: none;
+      transition: transform 0.15s cubic-bezier(0.34,1.56,0.64,1), opacity 0.3s;
+      opacity: 0;
+      z-index: 10;
+    }
+    .price-pop.show {
+      transform: translateX(-50%) scale(1);
+      opacity: 1;
+    }
+    .price-pop.hide {
+      transform: translateX(-50%) scale(0.8) translateY(-30px);
+      opacity: 0;
+    }
+
+    /* メインパネル */
+    .panel {
+      width: 100%;
+      max-width: 420px;
+      flex: 1;
+      padding: 20px 20px 32px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    /* 合計 */
+    .total-card {
+      background: linear-gradient(135deg, #16213e, #0f3460);
+      border-radius: 20px;
+      padding: 20px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+      border: 1px solid rgba(255,255,255,0.08);
+    }
+    .total-label {
+      font-size: 13px;
+      color: #aaa;
+      letter-spacing: 1px;
+      text-transform: uppercase;
       margin-bottom: 4px;
     }
-    .reminder-meta {
-      font-size: 13px;
-      color: #888;
+    .total-amount {
+      font-size: 42px;
+      font-weight: 900;
+      color: #f9ca24;
+      letter-spacing: -1px;
+      transition: transform 0.15s cubic-bezier(0.34,1.56,0.64,1);
     }
-    .delete-btn {
-      background: #3a3a3c;
-      border: none;
-      border-radius: 8px;
-      color: #ff453a;
-      font-size: 13px;
-      padding: 6px 12px;
-      cursor: pointer;
+    .total-amount.bump {
+      transform: scale(1.15);
     }
-    .notify-banner {
-      background: #1c1c1e;
-      border-left: 4px solid #3a82f7;
-      border-radius: 12px;
+    .total-yen {
+      font-size: 22px;
+      color: #f9ca24;
+      font-weight: 700;
+    }
+    .item-count {
+      background: rgba(249,202,36,0.15);
+      border-radius: 50px;
+      padding: 6px 14px;
+      font-size: 13px;
+      color: #f9ca24;
+      font-weight: 600;
+    }
+
+    /* 履歴 */
+    .history-wrap {
+      background: rgba(255,255,255,0.04);
+      border-radius: 16px;
       padding: 14px 16px;
-      margin-bottom: 16px;
-      font-size: 14px;
-      color: #aaa;
-      display: none;
+      min-height: 60px;
+      max-height: 120px;
+      overflow-y: auto;
+      border: 1px solid rgba(255,255,255,0.06);
     }
-    .notify-banner.show { display: block; }
-    .notify-banner button {
-      margin-top: 10px;
-      background: #3a82f7;
-      color: #fff;
-      border: none;
-      border-radius: 8px;
-      padding: 8px 16px;
-      font-size: 14px;
-      cursor: pointer;
-    }
-    .section-title {
-      font-size: 13px;
-      color: #888;
+    .history-title {
+      font-size: 11px;
+      color: #666;
+      letter-spacing: 1px;
       text-transform: uppercase;
-      letter-spacing: 0.5px;
-      margin-bottom: 10px;
+      margin-bottom: 8px;
+    }
+    .history-items {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+    .history-chip {
+      background: rgba(249,202,36,0.12);
+      border: 1px solid rgba(249,202,36,0.25);
+      border-radius: 50px;
+      padding: 4px 12px;
+      font-size: 13px;
+      color: #f9ca24;
+      font-weight: 600;
+      animation: popIn 0.25s cubic-bezier(0.34,1.56,0.64,1);
+    }
+    @keyframes popIn {
+      from { transform: scale(0); opacity: 0; }
+      to   { transform: scale(1); opacity: 1; }
+    }
+
+    /* お会計ボタン */
+    .checkout-btn {
+      width: 100%;
+      background: linear-gradient(135deg, #f9ca24, #f0932b);
+      color: #1a1a2e;
+      border: none;
+      border-radius: 18px;
+      font-size: 20px;
+      font-weight: 900;
+      padding: 18px;
+      cursor: pointer;
+      letter-spacing: 2px;
+      box-shadow: 0 8px 24px rgba(249,202,36,0.35);
+      transition: transform 0.1s, box-shadow 0.1s;
+    }
+    .checkout-btn:active {
+      transform: scale(0.97);
+      box-shadow: 0 4px 12px rgba(249,202,36,0.2);
+    }
+
+    /* お会計モーダル */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.7);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s;
+    }
+    .modal-overlay.show {
+      opacity: 1;
+      pointer-events: all;
+    }
+    .modal {
+      background: #16213e;
+      border-radius: 28px;
+      padding: 36px 28px;
+      text-align: center;
+      width: 85%;
+      max-width: 320px;
+      border: 1px solid rgba(255,255,255,0.1);
+      transform: scale(0.8);
+      transition: transform 0.3s cubic-bezier(0.34,1.56,0.64,1);
+    }
+    .modal-overlay.show .modal { transform: scale(1); }
+    .modal-emoji { font-size: 52px; margin-bottom: 12px; }
+    .modal-title { font-size: 18px; color: #aaa; margin-bottom: 8px; }
+    .modal-amount {
+      font-size: 52px;
+      font-weight: 900;
+      color: #f9ca24;
+      margin-bottom: 6px;
+    }
+    .modal-sub { font-size: 14px; color: #666; margin-bottom: 28px; }
+    .modal-btn {
+      width: 100%;
+      background: linear-gradient(135deg, #f9ca24, #f0932b);
+      color: #1a1a2e;
+      border: none;
+      border-radius: 14px;
+      font-size: 18px;
+      font-weight: 900;
+      padding: 16px;
+      cursor: pointer;
+      letter-spacing: 1px;
+    }
+
+    /* カメラ許可メッセージ */
+    .cam-msg {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: #000;
+      color: #aaa;
+      font-size: 14px;
+      gap: 12px;
+      border-radius: 0 0 32px 32px;
+    }
+    .cam-msg-icon { font-size: 40px; }
+    .cam-start-btn {
+      background: #f9ca24;
+      color: #1a1a2e;
+      border: none;
+      border-radius: 12px;
+      padding: 12px 28px;
+      font-size: 16px;
+      font-weight: 800;
+      cursor: pointer;
       margin-top: 8px;
     }
-    .empty {
-      text-align: center;
-      color: #555;
-      font-size: 14px;
-      padding: 20px 0;
-    }
-    #repeatFields { display: none; }
-    #onceFields { display: block; }
   </style>
 </head>
 <body>
 
-<h1>⏰ リマインダー</h1>
-
-<!-- 通知許可バナー -->
-<div class="notify-banner" id="notifyBanner">
-  通知を有効にすると、リマインダーが届きます。
-  <br/>
-  <button onclick="requestNotification()">通知を許可する</button>
+<div class="header">
+  <h1>🛒 こども<span>レジ</span></h1>
 </div>
 
-<!-- 入力カード -->
-<div class="card">
-  <label>内容</label>
-  <input type="text" id="reminderText" placeholder="例：薬を飲む" />
+<!-- カメラ -->
+<div class="camera-wrap" id="cameraWrap">
+  <video id="video" autoplay playsinline muted></video>
+  <canvas id="diffCanvas"></canvas>
 
-  <label>種類</label>
-  <select id="repeatType" onchange="toggleFields()">
-    <option value="once">一回限り</option>
-    <option value="daily">毎日</option>
-    <option value="weekly">毎週</option>
-  </select>
-
-  <!-- 一回限り -->
-  <div id="onceFields">
-    <label>日付</label>
-    <input type="date" id="onceDate" />
-    <label>時間</label>
-    <input type="time" id="onceTime" />
-  </div>
-
-  <!-- 繰り返し -->
-  <div id="repeatFields">
-    <label>時間</label>
-    <input type="time" id="repeatTime" />
-    <div id="weekdayFields" style="display:none; margin-bottom:14px;">
-      <label>曜日</label>
-      <div id="weekdays" style="display:flex; gap:8px; flex-wrap:wrap; margin-top:6px;">
-        <label style="text-transform:none; font-size:14px; color:#e0e0e0;" class="day-label" data-day="0">日</label>
-        <label style="text-transform:none; font-size:14px; color:#e0e0e0;" class="day-label" data-day="1">月</label>
-        <label style="text-transform:none; font-size:14px; color:#e0e0e0;" class="day-label" data-day="2">火</label>
-        <label style="text-transform:none; font-size:14px; color:#e0e0e0;" class="day-label" data-day="3">水</label>
-        <label style="text-transform:none; font-size:14px; color:#e0e0e0;" class="day-label" data-day="4">木</label>
-        <label style="text-transform:none; font-size:14px; color:#e0e0e0;" class="day-label" data-day="5">金</label>
-        <label style="text-transform:none; font-size:14px; color:#e0e0e0;" class="day-label" data-day="6">土</label>
-      </div>
+  <div class="scan-frame">
+    <div class="scan-box">
+      <div class="corner-bl"></div>
+      <div class="corner-br"></div>
+      <div class="scan-line"></div>
     </div>
   </div>
 
-  <button class="add-btn" onclick="addReminder()">＋ 追加</button>
+  <div class="flash" id="flash"></div>
+  <div class="price-pop" id="pricePop"></div>
+
+  <div class="cam-msg" id="camMsg">
+    <div class="cam-msg-icon">📷</div>
+    <div>カメラを使って商品をスキャンします</div>
+    <button class="cam-start-btn" onclick="startCamera()">カメラをスタート</button>
+  </div>
 </div>
 
-<!-- リスト -->
-<div class="section-title">登録済み</div>
-<div class="reminder-list" id="reminderList"></div>
+<!-- パネル -->
+<div class="panel">
+  <div class="total-card">
+    <div>
+      <div class="total-label">合計金額</div>
+      <div style="display:flex;align-items:baseline;gap:4px;">
+        <div class="total-amount" id="totalAmount">0</div>
+        <div class="total-yen">円</div>
+      </div>
+    </div>
+    <div class="item-count" id="itemCount">0 点</div>
+  </div>
+
+  <div class="history-wrap">
+    <div class="history-title">スキャン履歴</div>
+    <div class="history-items" id="historyItems">
+      <span style="color:#444; font-size:13px;">商品をかざしてください</span>
+    </div>
+  </div>
+
+  <button class="checkout-btn" onclick="checkout()">🛍 お会計</button>
+</div>
+
+<!-- モーダル -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal">
+    <div class="modal-emoji">🎉</div>
+    <div class="modal-title">お会計</div>
+    <div class="modal-amount" id="modalAmount">0円</div>
+    <div class="modal-sub" id="modalSub">0点のおかいもの</div>
+    <button class="modal-btn" onclick="resetAll()">またかいもの！</button>
+  </div>
+</div>
 
 <script>
-  let reminders = JSON.parse(localStorage.getItem('reminders') || '[]');
-  let selectedDays = [];
+  // 金額テーブル
+  const PRICES = [50, 100, 100, 100, 150, 200, 200, 300, 500, 1000];
 
-  // 曜日選択
-  document.querySelectorAll('.day-label').forEach(el => {
-    el.style.cssText += `
-      background:#2c2c2e; border-radius:8px; padding:6px 10px;
-      cursor:pointer; user-select:none;
-    `;
-    el.addEventListener('click', () => {
-      const day = parseInt(el.dataset.day);
-      if (selectedDays.includes(day)) {
-        selectedDays = selectedDays.filter(d => d !== day);
-        el.style.background = '#2c2c2e';
-        el.style.color = '#e0e0e0';
-      } else {
-        selectedDays.push(day);
-        el.style.background = '#3a82f7';
-        el.style.color = '#fff';
-      }
-    });
-  });
+  let total = 0;
+  let itemCount = 0;
+  let history = [];
+  let detecting = false;
+  let lastFrameData = null;
+  let cooldown = false;
 
-  function toggleFields() {
-    const type = document.getElementById('repeatType').value;
-    document.getElementById('onceFields').style.display = type === 'once' ? 'block' : 'none';
-    document.getElementById('repeatFields').style.display = type !== 'once' ? 'block' : 'none';
-    document.getElementById('weekdayFields').style.display = type === 'weekly' ? 'block' : 'none';
+  // ピッ音
+  function beep() {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(1200, ctx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(900, ctx.currentTime + 0.08);
+    gain.gain.setValueAtTime(0.4, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.15);
+    osc.start(ctx.currentTime);
+    osc.stop(ctx.currentTime + 0.15);
   }
 
-  function addReminder() {
-    const text = document.getElementById('reminderText').value.trim();
-    const type = document.getElementById('repeatType').value;
-    if (!text) return alert('内容を入力してください');
-
-    let reminder = { id: Date.now(), text, type };
-
-    if (type === 'once') {
-      const date = document.getElementById('onceDate').value;
-      const time = document.getElementById('onceTime').value;
-      if (!date || !time) return alert('日付と時間を入力してください');
-      reminder.datetime = `${date}T${time}`;
-    } else if (type === 'daily') {
-      const time = document.getElementById('repeatTime').value;
-      if (!time) return alert('時間を入力してください');
-      reminder.time = time;
-    } else if (type === 'weekly') {
-      const time = document.getElementById('repeatTime').value;
-      if (!time) return alert('時間を入力してください');
-      if (selectedDays.length === 0) return alert('曜日を選択してください');
-      reminder.time = time;
-      reminder.days = [...selectedDays];
+  // カメラ起動
+  async function startCamera() {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: 'environment', width: 320, height: 240 }
+      });
+      const video = document.getElementById('video');
+      video.srcObject = stream;
+      document.getElementById('camMsg').style.display = 'none';
+      video.addEventListener('play', startDetection);
+    } catch(e) {
+      alert('カメラの許可をしてください');
     }
-
-    reminders.push(reminder);
-    save();
-    renderList();
-    document.getElementById('reminderText').value = '';
   }
 
-  function deleteReminder(id) {
-    reminders = reminders.filter(r => r.id !== id);
-    save();
-    renderList();
-  }
+  // 動き検知
+  function startDetection() {
+    const video = document.getElementById('video');
+    const canvas = document.getElementById('diffCanvas');
+    const ctx = canvas.getContext('2d');
+    canvas.width = 80;
+    canvas.height = 60;
 
-  function save() {
-    localStorage.setItem('reminders', JSON.stringify(reminders));
-  }
+    function detect() {
+      if (video.paused || video.ended) return;
+      ctx.drawImage(video, 0, 0, 80, 60);
+      const frame = ctx.getImageData(0, 0, 80, 60);
+      const data = frame.data;
 
-  function renderList() {
-    const list = document.getElementById('reminderList');
-    if (reminders.length === 0) {
-      list.innerHTML = '<div class="empty">リマインダーがありません</div>';
-      return;
-    }
-    const dayNames = ['日','月','火','水','木','金','土'];
-    list.innerHTML = reminders.map(r => {
-      let meta = '';
-      if (r.type === 'once') {
-        const d = new Date(r.datetime);
-        meta = `${d.getMonth()+1}/${d.getDate()} ${d.getHours()}:${String(d.getMinutes()).padStart(2,'0')}`;
-      } else if (r.type === 'daily') {
-        meta = `毎日 ${r.time}`;
-      } else if (r.type === 'weekly') {
-        meta = `毎週 ${r.days.map(d => dayNames[d]).join('・')} ${r.time}`;
-      }
-      return `
-        <div class="reminder-item">
-          <div class="reminder-info">
-            <div class="reminder-title">${r.text}</div>
-            <div class="reminder-meta">${meta}</div>
-          </div>
-          <button class="delete-btn" onclick="deleteReminder(${r.id})">削除</button>
-        </div>
-      `;
-    }).join('');
-  }
-
-  // 通知
-  function requestNotification() {
-    Notification.requestPermission().then(p => {
-      if (p === 'granted') {
-        document.getElementById('notifyBanner').classList.remove('show');
-        startChecker();
-      }
-    });
-  }
-
-  function checkNotifications() {
-    const now = new Date();
-    const dayNames = ['日','月','火','水','木','金','土'];
-    const todayDay = now.getDay();
-    const hhmm = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
-    const nowStr = now.toISOString().slice(0,16);
-
-    reminders.forEach(r => {
-      if (r.type === 'once') {
-        if (r.datetime && r.datetime.slice(0,16) === nowStr && !r.fired) {
-          sendNotification(r.text);
-          r.fired = true;
-          save();
+      if (lastFrameData && !cooldown) {
+        let diff = 0;
+        for (let i = 0; i < data.length; i += 4) {
+          diff += Math.abs(data[i] - lastFrameData[i]);
+          diff += Math.abs(data[i+1] - lastFrameData[i+1]);
+          diff += Math.abs(data[i+2] - lastFrameData[i+2]);
         }
-      } else if (r.type === 'daily') {
-        if (r.time === hhmm) {
-          const key = `fired_${r.id}_${now.toDateString()}`;
-          if (!localStorage.getItem(key)) {
-            sendNotification(r.text);
-            localStorage.setItem(key, '1');
-          }
-        }
-      } else if (r.type === 'weekly') {
-        if (r.days.includes(todayDay) && r.time === hhmm) {
-          const key = `fired_${r.id}_${now.toDateString()}`;
-          if (!localStorage.getItem(key)) {
-            sendNotification(r.text);
-            localStorage.setItem(key, '1');
-          }
+        const avg = diff / (data.length / 4);
+        if (avg > 18) {
+          onDetected();
         }
       }
-    });
-  }
-
-  function sendNotification(text) {
-    if (Notification.permission === 'granted') {
-      new Notification('⏰ リマインダー', { body: text, icon: '/icon.png' });
+      lastFrameData = new Uint8Array(data);
+      requestAnimationFrame(detect);
     }
+    detect();
   }
 
-  function startChecker() {
-    setInterval(checkNotifications, 30000);
-    checkNotifications();
+  function onDetected() {
+    if (cooldown) return;
+    cooldown = true;
+
+    // 音
+    beep();
+
+    // 金額決定
+    const price = PRICES[Math.floor(Math.random() * PRICES.length)];
+
+    // 合計更新
+    total += price;
+    itemCount++;
+    history.push(price);
+
+    // UI更新
+    updateTotal();
+    showPricePop(price);
+    showFlash();
+    addHistoryChip(price);
+
+    setTimeout(() => { cooldown = false; }, 1500);
   }
 
-  // 初期化
-  window.addEventListener('load', () => {
-    renderList();
-    if (!('Notification' in window)) return;
-    if (Notification.permission === 'granted') {
-      startChecker();
-    } else if (Notification.permission !== 'denied') {
-      document.getElementById('notifyBanner').classList.add('show');
-    }
-  });
+  function updateTotal() {
+    const el = document.getElementById('totalAmount');
+    el.textContent = total.toLocaleString();
+    el.classList.remove('bump');
+    void el.offsetWidth;
+    el.classList.add('bump');
+    setTimeout(() => el.classList.remove('bump'), 200);
+    document.getElementById('itemCount').textContent = `${itemCount} 点`;
+  }
 
-  // 今日の日付をデフォルトに
-  const today = new Date().toISOString().split('T')[0];
-  document.getElementById('onceDate').value = today;
+  function showPricePop(price) {
+    const pop = document.getElementById('pricePop');
+    pop.textContent = `+${price.toLocaleString()}円`;
+    pop.className = 'price-pop show';
+    setTimeout(() => { pop.className = 'price-pop hide'; }, 800);
+    setTimeout(() => { pop.className = 'price-pop'; }, 1100);
+  }
+
+  function showFlash() {
+    const flash = document.getElementById('flash');
+    flash.classList.add('active');
+    setTimeout(() => flash.classList.remove('active'), 200);
+  }
+
+  function addHistoryChip(price) {
+    const wrap = document.getElementById('historyItems');
+    if (history.length === 1) wrap.innerHTML = '';
+    const chip = document.createElement('div');
+    chip.className = 'history-chip';
+    chip.textContent = `${price.toLocaleString()}円`;
+    wrap.appendChild(chip);
+    wrap.scrollTop = wrap.scrollHeight;
+  }
+
+  function checkout() {
+    if (itemCount === 0) return;
+    document.getElementById('modalAmount').textContent = `${total.toLocaleString()}円`;
+    document.getElementById('modalSub').textContent = `${itemCount}点のおかいもの`;
+    document.getElementById('modalOverlay').classList.add('show');
+  }
+
+  function resetAll() {
+    total = 0;
+    itemCount = 0;
+    history = [];
+    document.getElementById('totalAmount').textContent = '0';
+    document.getElementById('itemCount').textContent = '0 点';
+    document.getElementById('historyItems').innerHTML =
+      '<span style="color:#444; font-size:13px;">商品をかざしてください</span>';
+    document.getElementById('modalOverlay').classList.remove('show');
+  }
 </script>
 </body>
 </html>
