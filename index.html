@@ -177,7 +177,6 @@
     .history-empty { padding: 32px 20px; text-align: center; color: #ccc; font-size: 14px; }
     .history-empty-icon { font-size: 36px; margin-bottom: 8px; }
 
-    /* ── キャッシュレス画面 ── */
     .cashless-screen {
       display: none; position: fixed; inset: 0;
       background: #f0f2f5;
@@ -226,7 +225,6 @@
     .cl-touch-title { font-size: 17px; font-weight: 800; color: #1a1a1a; text-align: center; }
     .cl-touch-sub { font-size: 13px; color: #aaa; text-align: center; line-height: 1.7; }
 
-    /* 決済方法選択 */
     .cl-pays-card {
       width: calc(100% - 40px); max-width: 440px;
       margin: 16px auto 0; background: #fff;
@@ -252,7 +250,6 @@
       font-size: 15px; font-weight: 600; cursor: pointer;
     }
 
-    /* ── 決済完了 ── */
     .cl-success {
       position: fixed; inset: 0; background: rgba(255,255,255,0.95);
       display: flex; flex-direction: column; align-items: center; justify-content: center;
@@ -294,7 +291,6 @@
 </head>
 <body>
 
-<!-- ヘッダー -->
 <div class="header" style="max-width:480px; width:100%;">
   <div class="header-logo">
     <div class="header-logo-icon">🛒</div>
@@ -306,7 +302,6 @@
   <div class="header-time" id="headerTime">00:00</div>
 </div>
 
-<!-- カメラ -->
 <div class="camera-section">
   <div class="camera-header">
     <div class="camera-header-title">スキャンエリア</div>
@@ -339,7 +334,6 @@
   </div>
 </div>
 
-<!-- メインパネル -->
 <div class="main-panel">
   <div class="total-section">
     <div>
@@ -376,7 +370,6 @@
   </div>
 </div>
 
-<!-- キャッシュレス画面 -->
 <div class="cashless-screen" id="cashlessScreen">
   <div class="cl-header" style="width:100%;">
     <div class="cl-header-title">💳 キャッシュレス決済</div>
@@ -423,7 +416,6 @@
   <button class="cl-cancel-btn" onclick="cancelCheckout()">← スキャン画面にもどる</button>
 </div>
 
-<!-- 決済完了 -->
 <div class="cl-success" id="clSuccess">
   <div class="success-circle">✓</div>
   <div class="success-title">決済が完了しました</div>
@@ -447,6 +439,12 @@
     rakuten:  '楽天Pay',
     aupay:    'au PAY',
     master:   'Mastercard'
+  };
+
+  // mp3ファイルを事前に読み込んでおく
+  const MP3_SOUNDS = {
+    paypay:   new Audio('paypay.mp3'),
+    quickpay: new Audio('quicpay.mp3')
   };
 
   let total = 0;
@@ -495,10 +493,20 @@
     osc.stop(ctx.currentTime + 0.1);
   }
 
-  // キャッシュレス決済音（選択 or ランダム）
+  // キャッシュレス決済音（mp3 or Web Audio）
   function beepCashless() {
     const type = selectedPay || PAY_TYPES[Math.floor(Math.random() * PAY_TYPES.length)];
-    playPaySound(type);
+
+    if (MP3_SOUNDS[type]) {
+      // mp3が紐づいている場合はmp3を再生
+      const audio = MP3_SOUNDS[type];
+      audio.currentTime = 0;
+      audio.play();
+    } else {
+      // それ以外はWeb Audio合成音
+      playPaySound(type);
+    }
+
     return type;
   }
 
@@ -520,49 +528,30 @@
     }
 
     switch(type) {
-      case 'paypay':
-        // PayPay風：明るく2段階
-        tone(880,  0,    0.12, 0.4);
-        tone(1320, 0.15, 0.12, 0.4);
-        tone(880,  0.30, 0.08, 0.3);
-        tone(1320, 0.38, 0.18, 0.45);
-        break;
-      case 'quickpay':
-        // QUICPay風：鋭い電子音3連
-        tone(1800, 0,    0.06, 0.35, 'square');
-        tone(2200, 0.08, 0.06, 0.35, 'square');
-        tone(1800, 0.16, 0.10, 0.3,  'square');
-        break;
       case 'suica':
-        // Suica風：柔らかいチャイム
         tone(659,  0,    0.15, 0.35);
         tone(784,  0.18, 0.15, 0.35);
         tone(1047, 0.36, 0.25, 0.4);
         break;
       case 'credit':
-        // クレカ風：ピピッと承認音
         tone(1200, 0,    0.08, 0.3);
         tone(1200, 0.10, 0.08, 0.3);
         tone(1600, 0.22, 0.18, 0.4);
         break;
       case 'id':
-        // iD風：低めのポップ2音
         tone(600,  0,    0.10, 0.35);
         tone(900,  0.13, 0.18, 0.4);
         break;
       case 'rakuten':
-        // 楽天Pay風：明るい3音階
         tone(523,  0,    0.12, 0.35);
         tone(659,  0.14, 0.12, 0.35);
         tone(784,  0.28, 0.20, 0.4);
         break;
       case 'aupay':
-        // au PAY風：軽快な2音
         tone(1000, 0,    0.10, 0.35);
         tone(1500, 0.13, 0.15, 0.4);
         break;
       case 'master':
-        // Mastercard風：落ち着いた2トーン
         tone(440,  0,    0.15, 0.3);
         tone(554,  0.18, 0.22, 0.4);
         break;
@@ -619,7 +608,7 @@
 
       if (!isDark && brightness < DARK_THRESHOLD && !cooldown) {
         isDark = true;
-        if (mode === 'scan')      onScanned();
+        if (mode === 'scan')          onScanned();
         else if (mode === 'cashless') onCashlessPay();
       }
       if (isDark && brightness > BRIGHT_THRESHOLD) isDark = false;
