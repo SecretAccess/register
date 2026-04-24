@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>リマインダー</title>
+  <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+  <meta name="apple-mobile-web-app-title" content="リマインダー"/>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: #0f0f0f;
+      color: #e0e0e0;
+      font-family: -apple-system, sans-serif;
+      min-height: 100vh;
+      padding: 24px 16px;
+    }
+    h1 {
+      font-size: 24px;
+      font-weight: 700;
+      margin-bottom: 24px;
+      color: #ffffff;
+    }
+    .card {
+      background: #1c1c1e;
+      border-radius: 16px;
+      padding: 20px;
+      margin-bottom: 16px;
+    }
+    label {
+      display: block;
+      font-size: 12px;
+      color: #888;
+      margin-bottom: 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    input[type="text"],
+    input[type="time"],
+    select {
+      width: 100%;
+      background: #2c2c2e;
+      border: none;
+      border-radius: 10px;
+      color: #e0e0e0;
+      font-size: 16px;
+      padding: 12px 14px;
+      margin-bottom: 14px;
+      outline: none;
+      appearance: none;
+    }
+    input[type="date"] {
+      width: 100%;
+      background: #2c2c2e;
+      border: none;
+      border-radius: 10px;
+      color: #e0e0e0;
+      font-size: 16px;
+      padding: 12px 14px;
+      margin-bottom: 14px;
+      outline: none;
+      appearance: none;
+    }
+    button.add-btn {
+      width: 100%;
+      background: #3a82f7;
+      color: #fff;
+      border: none;
+      border-radius: 12px;
+      font-size: 16px;
+      font-weight: 600;
+      padding: 14px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    button.add-btn:active { background: #2563c7; }
+
+    .reminder-list { margin-top: 8px; }
+    .reminder-item {
+      background: #1c1c1e;
+      border-radius: 14px;
+      padding: 16px;
+      margin-bottom: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .reminder-info { flex: 1; }
+    .reminder-title {
+      font-size: 16px;
+      font-weight: 600;
+      color: #fff;
+      margin-bottom: 4px;
+    }
+    .reminder-meta {
+      font-size: 13px;
+      color: #888;
+    }
+    .delete-btn {
+      background: #3a3a3c;
+      border: none;
+      border-radius: 8px;
+      color: #ff453a;
+      font-size: 13px;
+      padding: 6px 12px;
+      cursor: pointer;
+    }
+    .notify-banner {
+      background: #1c1c1e;
+      border-left: 4px solid #3a82f7;
+      border-radius: 12px;
+      padding: 14px 16px;
+      margin-bottom: 16px;
+      font-size: 14px;
+      color: #aaa;
+      display: none;
+    }
+    .notify-banner.show { display: block; }
+    .notify-banner button {
+      margin-top: 10px;
+      background: #3a82f7;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: 8px 16px;
+      font-size: 14px;
+      cursor: pointer;
+    }
+    .section-title {
+      font-size: 13px;
+      color: #888;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 10px;
+      margin-top: 8px;
+    }
+    .empty {
+      text-align: center;
+      color: #555;
+      font-size: 14px;
+      padding: 20px 0;
+    }
+    #repeatFields { display: none; }
+    #onceFields { display: block; }
+  </style>
+</head>
+<body>
+
+<h1>⏰ リマインダー</h1>
+
+<!-- 通知許可バナー -->
+<div class="notify-banner" id="notifyBanner">
+  通知を有効にすると、リマインダーが届きます。
+  <br/>
+  <button onclick="requestNotification()">通知を許可する</button>
+</div>
+
+<!-- 入力カード -->
+<div class="card">
+  <label>内容</label>
+  <input type="text" id="reminderText" placeholder="例：薬を飲む" />
+
+  <label>種類</label>
+  <select id="repeatType" onchange="toggleFields()">
+    <option value="once">一回限り</option>
+    <option value="daily">毎日</option>
+    <option value="weekly">毎週</option>
+  </select>
+
+  <!-- 一回限り -->
+  <div id="onceFields">
+    <label>日付</label>
+    <input type="date" id="onceDate" />
+    <label>時間</label>
+    <input type="time" id="onceTime" />
+  </div>
+
+  <!-- 繰り返し -->
+  <div id="repeatFields">
+    <label>時間</label>
+    <input type="time" id="repeatTime" />
+    <div id="weekdayFields" style="display:none; margin-bottom:14px;">
+      <label>曜日</label>
+      <div id="weekdays" style="display:flex; gap:8px; flex-wrap:wrap; margin-top:6px;">
+        <label style="text-transform:none; font-size:14px; color:#e0e0e0;" class="day-label" data-day="0">日</label>
+        <label style="text-transform:none; font-size:14px; color:#e0e0e0;" class="day-label" data-day="1">月</label>
+        <label style="text-transform:none; font-size:14px; color:#e0e0e0;" class="day-label" data-day="2">火</label>
+        <label style="text-transform:none; font-size:14px; color:#e0e0e0;" class="day-label" data-day="3">水</label>
+        <label style="text-transform:none; font-size:14px; color:#e0e0e0;" class="day-label" data-day="4">木</label>
+        <label style="text-transform:none; font-size:14px; color:#e0e0e0;" class="day-label" data-day="5">金</label>
+        <label style="text-transform:none; font-size:14px; color:#e0e0e0;" class="day-label" data-day="6">土</label>
+      </div>
+    </div>
+  </div>
+
+  <button class="add-btn" onclick="addReminder()">＋ 追加</button>
+</div>
+
+<!-- リスト -->
+<div class="section-title">登録済み</div>
+<div class="reminder-list" id="reminderList"></div>
+
+<script>
+  let reminders = JSON.parse(localStorage.getItem('reminders') || '[]');
+  let selectedDays = [];
+
+  // 曜日選択
+  document.querySelectorAll('.day-label').forEach(el => {
+    el.style.cssText += `
+      background:#2c2c2e; border-radius:8px; padding:6px 10px;
+      cursor:pointer; user-select:none;
+    `;
+    el.addEventListener('click', () => {
+      const day = parseInt(el.dataset.day);
+      if (selectedDays.includes(day)) {
+        selectedDays = selectedDays.filter(d => d !== day);
+        el.style.background = '#2c2c2e';
+        el.style.color = '#e0e0e0';
+      } else {
+        selectedDays.push(day);
+        el.style.background = '#3a82f7';
+        el.style.color = '#fff';
+      }
+    });
+  });
+
+  function toggleFields() {
+    const type = document.getElementById('repeatType').value;
+    document.getElementById('onceFields').style.display = type === 'once' ? 'block' : 'none';
+    document.getElementById('repeatFields').style.display = type !== 'once' ? 'block' : 'none';
+    document.getElementById('weekdayFields').style.display = type === 'weekly' ? 'block' : 'none';
+  }
+
+  function addReminder() {
+    const text = document.getElementById('reminderText').value.trim();
+    const type = document.getElementById('repeatType').value;
+    if (!text) return alert('内容を入力してください');
+
+    let reminder = { id: Date.now(), text, type };
+
+    if (type === 'once') {
+      const date = document.getElementById('onceDate').value;
+      const time = document.getElementById('onceTime').value;
+      if (!date || !time) return alert('日付と時間を入力してください');
+      reminder.datetime = `${date}T${time}`;
+    } else if (type === 'daily') {
+      const time = document.getElementById('repeatTime').value;
+      if (!time) return alert('時間を入力してください');
+      reminder.time = time;
+    } else if (type === 'weekly') {
+      const time = document.getElementById('repeatTime').value;
+      if (!time) return alert('時間を入力してください');
+      if (selectedDays.length === 0) return alert('曜日を選択してください');
+      reminder.time = time;
+      reminder.days = [...selectedDays];
+    }
+
+    reminders.push(reminder);
+    save();
+    renderList();
+    document.getElementById('reminderText').value = '';
+  }
+
+  function deleteReminder(id) {
+    reminders = reminders.filter(r => r.id !== id);
+    save();
+    renderList();
+  }
+
+  function save() {
+    localStorage.setItem('reminders', JSON.stringify(reminders));
+  }
+
+  function renderList() {
+    const list = document.getElementById('reminderList');
+    if (reminders.length === 0) {
+      list.innerHTML = '<div class="empty">リマインダーがありません</div>';
+      return;
+    }
+    const dayNames = ['日','月','火','水','木','金','土'];
+    list.innerHTML = reminders.map(r => {
+      let meta = '';
+      if (r.type === 'once') {
+        const d = new Date(r.datetime);
+        meta = `${d.getMonth()+1}/${d.getDate()} ${d.getHours()}:${String(d.getMinutes()).padStart(2,'0')}`;
+      } else if (r.type === 'daily') {
+        meta = `毎日 ${r.time}`;
+      } else if (r.type === 'weekly') {
+        meta = `毎週 ${r.days.map(d => dayNames[d]).join('・')} ${r.time}`;
+      }
+      return `
+        <div class="reminder-item">
+          <div class="reminder-info">
+            <div class="reminder-title">${r.text}</div>
+            <div class="reminder-meta">${meta}</div>
+          </div>
+          <button class="delete-btn" onclick="deleteReminder(${r.id})">削除</button>
+        </div>
+      `;
+    }).join('');
+  }
+
+  // 通知
+  function requestNotification() {
+    Notification.requestPermission().then(p => {
+      if (p === 'granted') {
+        document.getElementById('notifyBanner').classList.remove('show');
+        startChecker();
+      }
+    });
+  }
+
+  function checkNotifications() {
+    const now = new Date();
+    const dayNames = ['日','月','火','水','木','金','土'];
+    const todayDay = now.getDay();
+    const hhmm = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+    const nowStr = now.toISOString().slice(0,16);
+
+    reminders.forEach(r => {
+      if (r.type === 'once') {
+        if (r.datetime && r.datetime.slice(0,16) === nowStr && !r.fired) {
+          sendNotification(r.text);
+          r.fired = true;
+          save();
+        }
+      } else if (r.type === 'daily') {
+        if (r.time === hhmm) {
+          const key = `fired_${r.id}_${now.toDateString()}`;
+          if (!localStorage.getItem(key)) {
+            sendNotification(r.text);
+            localStorage.setItem(key, '1');
+          }
+        }
+      } else if (r.type === 'weekly') {
+        if (r.days.includes(todayDay) && r.time === hhmm) {
+          const key = `fired_${r.id}_${now.toDateString()}`;
+          if (!localStorage.getItem(key)) {
+            sendNotification(r.text);
+            localStorage.setItem(key, '1');
+          }
+        }
+      }
+    });
+  }
+
+  function sendNotification(text) {
+    if (Notification.permission === 'granted') {
+      new Notification('⏰ リマインダー', { body: text, icon: '/icon.png' });
+    }
+  }
+
+  function startChecker() {
+    setInterval(checkNotifications, 30000);
+    checkNotifications();
+  }
+
+  // 初期化
+  window.addEventListener('load', () => {
+    renderList();
+    if (!('Notification' in window)) return;
+    if (Notification.permission === 'granted') {
+      startChecker();
+    } else if (Notification.permission !== 'denied') {
+      document.getElementById('notifyBanner').classList.add('show');
+    }
+  });
+
+  // 今日の日付をデフォルトに
+  const today = new Date().toISOString().split('T')[0];
+  document.getElementById('onceDate').value = today;
+</script>
+</body>
+</html>
