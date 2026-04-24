@@ -177,6 +177,7 @@
     .history-empty { padding: 32px 20px; text-align: center; color: #ccc; font-size: 14px; }
     .history-empty-icon { font-size: 36px; margin-bottom: 8px; }
 
+    /* ── キャッシュレス画面 ── */
     .cashless-screen {
       display: none; position: fixed; inset: 0;
       background: #f0f2f5;
@@ -225,22 +226,56 @@
     .cl-touch-title { font-size: 17px; font-weight: 800; color: #1a1a1a; text-align: center; }
     .cl-touch-sub { font-size: 13px; color: #aaa; text-align: center; line-height: 1.7; }
 
+    /* ── ロゴ選択グリッド ── */
     .cl-pays-card {
       width: calc(100% - 40px); max-width: 440px;
       margin: 16px auto 0; background: #fff;
-      border-radius: 12px; padding: 16px 20px;
+      border-radius: 12px; padding: 20px;
       box-shadow: 0 2px 12px rgba(0,0,0,0.08); border: 1px solid #e0e0e0;
     }
-    .cl-pays-label { font-size: 11px; color: #bbb; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 12px; }
-    .cl-pays-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
-    .pay-chip {
-      background: #f7f8fa; border: 1px solid #e8e8e8;
-      border-radius: 8px; padding: 8px 6px;
-      text-align: center; font-size: 11px; font-weight: 700; color: #555;
-      cursor: pointer; transition: all 0.15s;
+    .cl-pays-label {
+      font-size: 11px; color: #bbb; font-weight: 700;
+      letter-spacing: 1px; text-transform: uppercase; margin-bottom: 14px;
+      text-align: center;
     }
-    .pay-chip:active { transform: scale(0.95); }
-    .pay-chip.selected { background: #1a5276; color: #fff; border-color: #1a5276; }
+    .cl-pays-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+    }
+    /* 5番目だけ中央に */
+    .cl-pays-grid .pay-logo-btn:nth-child(4) { grid-column: 1; }
+    .cl-pays-grid .pay-logo-btn:nth-child(5) { grid-column: 2; }
+
+    .pay-logo-btn {
+      background: #f7f8fa;
+      border: 2px solid #e8e8e8;
+      border-radius: 12px;
+      padding: 12px 8px;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      gap: 6px;
+      cursor: pointer;
+      transition: all 0.15s;
+      min-height: 80px;
+    }
+    .pay-logo-btn:active { transform: scale(0.95); }
+    .pay-logo-btn.selected {
+      border-color: #1a5276;
+      background: #eaf2fb;
+      box-shadow: 0 0 0 1px #1a5276;
+    }
+    .pay-logo-btn img {
+      width: 72px;
+      height: 36px;
+      object-fit: contain;
+    }
+    .pay-logo-name {
+      font-size: 10px;
+      color: #999;
+      font-weight: 600;
+    }
+    .pay-logo-btn.selected .pay-logo-name { color: #1a5276; }
 
     .cl-cancel-btn {
       width: calc(100% - 40px); max-width: 440px;
@@ -250,6 +285,7 @@
       font-size: 15px; font-weight: 600; cursor: pointer;
     }
 
+    /* ── 決済完了 ── */
     .cl-success {
       position: fixed; inset: 0; background: rgba(255,255,255,0.95);
       display: flex; flex-direction: column; align-items: center; justify-content: center;
@@ -267,7 +303,10 @@
     .success-title { font-size: 26px; font-weight: 900; color: #1a1a1a; }
     .success-amount { font-size: 44px; font-weight: 900; color: #27ae60; font-variant-numeric: tabular-nums; }
     .success-sub { font-size: 14px; color: #aaa; }
-    .success-pay-type { font-size: 13px; color: #bbb; background: #f7f8fa; border: 1px solid #e8e8e8; border-radius: 8px; padding: 6px 16px; }
+    .success-pay-logo {
+      height: 36px;
+      object-fit: contain;
+    }
     .success-receipt { background: #f7f8fa; border: 1px solid #e8e8e8; border-radius: 10px; padding: 12px 24px; font-size: 13px; color: #aaa; }
     .success-back-btn {
       margin-top: 8px; background: #1a5276; color: #fff; border: none;
@@ -370,6 +409,7 @@
   </div>
 </div>
 
+<!-- キャッシュレス画面 -->
 <div class="cashless-screen" id="cashlessScreen">
   <div class="cl-header" style="width:100%;">
     <div class="cl-header-title">💳 キャッシュレス決済</div>
@@ -399,29 +439,43 @@
     </div>
   </div>
 
+  <!-- ロゴ選択 -->
   <div class="cl-pays-card">
     <div class="cl-pays-label">決済方法を選ぶ（省略可・ランダム）</div>
     <div class="cl-pays-grid">
-      <div class="pay-chip" onclick="selectPay(this,'paypay')">PayPay</div>
-      <div class="pay-chip" onclick="selectPay(this,'quickpay')">QUICPay</div>
-      <div class="pay-chip" onclick="selectPay(this,'suica')">Suica</div>
-      <div class="pay-chip" onclick="selectPay(this,'credit')">クレカ</div>
-      <div class="pay-chip" onclick="selectPay(this,'id')">iD</div>
-      <div class="pay-chip" onclick="selectPay(this,'rakuten')">楽天Pay</div>
-      <div class="pay-chip" onclick="selectPay(this,'aupay')">au PAY</div>
-      <div class="pay-chip" onclick="selectPay(this,'master')">Master</div>
+      <div class="pay-logo-btn" onclick="selectPay(this,'paypay')">
+        <img src="paypay.png" alt="PayPay"/>
+        <div class="pay-logo-name">PayPay</div>
+      </div>
+      <div class="pay-logo-btn" onclick="selectPay(this,'quickpay')">
+        <img src="quickpay.png" alt="QUICPay"/>
+        <div class="pay-logo-name">QUICPay</div>
+      </div>
+      <div class="pay-logo-btn" onclick="selectPay(this,'id')">
+        <img src="id.png" alt="iD"/>
+        <div class="pay-logo-name">iD</div>
+      </div>
+      <div class="pay-logo-btn" onclick="selectPay(this,'waon')">
+        <img src="waon.png" alt="WAON"/>
+        <div class="pay-logo-name">WAON</div>
+      </div>
+      <div class="pay-logo-btn" onclick="selectPay(this,'applepay')">
+        <img src="applepay.png" alt="Apple Pay"/>
+        <div class="pay-logo-name">Apple Pay</div>
+      </div>
     </div>
   </div>
 
   <button class="cl-cancel-btn" onclick="cancelCheckout()">← スキャン画面にもどる</button>
 </div>
 
+<!-- 決済完了 -->
 <div class="cl-success" id="clSuccess">
   <div class="success-circle">✓</div>
   <div class="success-title">決済が完了しました</div>
   <div class="success-amount" id="successAmount">¥0</div>
   <div class="success-sub" id="successSub">0点のおかいもの</div>
-  <div class="success-pay-type" id="successPayType">💳 クレカ</div>
+  <img class="success-pay-logo" id="successPayLogo" src="" alt=""/>
   <div class="success-receipt">🧾 領収書は不要です</div>
   <button class="success-back-btn" onclick="resetAll()">🛒 最初にもどる</button>
 </div>
@@ -429,23 +483,21 @@
 <script>
   const PRICES     = [50, 100, 100, 100, 150, 200, 200, 300, 500, 1000];
   const ITEM_NAMES = ['食料品', '惣菜', '加工食品', '生鮮食品'];
-  const PAY_TYPES  = ['paypay','quickpay','suica','credit','id','rakuten','aupay','master'];
-  const PAY_LABELS = {
-    paypay:   'PayPay',
-    quickpay: 'QUICPay',
-    suica:    'Suica',
-    credit:   'クレジットカード',
-    id:       'iD',
-    rakuten:  '楽天Pay',
-    aupay:    'au PAY',
-    master:   'Mastercard'
+  const PAY_TYPES  = ['paypay', 'quickpay', 'id', 'waon', 'applepay'];
+
+  const PAY_INFO = {
+    paypay:   { label: 'PayPay',     logo: 'paypay.png',   mp3: 'paypay.mp3'   },
+    quickpay: { label: 'QUICPay',    logo: 'quickpay.png', mp3: 'quicpay.mp3'  },
+    id:       { label: 'iD',         logo: 'id.png',       mp3: 'id.mp3'       },
+    waon:     { label: 'WAON',       logo: 'waon.png',     mp3: 'waon.mp3'     },
+    applepay: { label: 'Apple Pay',  logo: 'applepay.png', mp3: 'applepay.mp3' },
   };
 
-  // mp3ファイルを事前に読み込んでおく
-  const MP3_SOUNDS = {
-    paypay:   new Audio('paypay.mp3'),
-    quickpay: new Audio('quicpay.mp3')
-  };
+  // mp3を事前ロード
+  const MP3_SOUNDS = {};
+  Object.keys(PAY_INFO).forEach(key => {
+    MP3_SOUNDS[key] = new Audio(PAY_INFO[key].mp3);
+  });
 
   let total = 0;
   let itemCount = 0;
@@ -469,10 +521,10 @@
   function selectPay(el, type) {
     if (selectedPay === type) {
       selectedPay = null;
-      document.querySelectorAll('.pay-chip').forEach(c => c.classList.remove('selected'));
+      document.querySelectorAll('.pay-logo-btn').forEach(c => c.classList.remove('selected'));
     } else {
       selectedPay = type;
-      document.querySelectorAll('.pay-chip').forEach(c => c.classList.remove('selected'));
+      document.querySelectorAll('.pay-logo-btn').forEach(c => c.classList.remove('selected'));
       el.classList.add('selected');
     }
   }
@@ -493,98 +545,16 @@
     osc.stop(ctx.currentTime + 0.1);
   }
 
-  // キャッシュレス決済音（mp3 or Web Audio）
+  // キャッシュレス決済音（全てmp3）
   function beepCashless() {
     const type = selectedPay || PAY_TYPES[Math.floor(Math.random() * PAY_TYPES.length)];
-
-    if (MP3_SOUNDS[type]) {
-      // mp3が紐づいている場合はmp3を再生
-      const audio = MP3_SOUNDS[type];
+    const audio = MP3_SOUNDS[type];
+    if (audio) {
       audio.currentTime = 0;
       audio.play();
-    } else {
-      // それ以外はWeb Audio合成音
-      playPaySound(type);
     }
-
     return type;
   }
-
-  function playPaySound(type) {
-    const ctx = new (window.AudioContext || window.webkitAudioContext)();
-
-    function tone(freq, start, dur, vol=0.4, wave='sine') {
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.connect(gain); gain.connect(ctx.destination);
-      osc.type = wave;
-      osc.frequency.setValueAtTime(freq, ctx.currentTime + start);
-      gain.gain.setValueAtTime(0, ctx.currentTime + start);
-      gain.gain.linearRampToValueAtTime(vol, ctx.currentTime + start + 0.01);
-      gain.gain.setValueAtTime(vol, ctx.currentTime + start + dur - 0.02);
-      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + start + dur);
-      osc.start(ctx.currentTime + start);
-      osc.stop(ctx.currentTime + start + dur);
-    }
-
-    switch (type) {
-
-  // Suica: 実際の改札音に近い「ミ→ラ→高ド」上昇フレーズ
-  // E5(659Hz) → A5(880Hz) → C6(1047Hz) — 間隔を少し詰めて軽快に
-  case 'suica':
-    tone(659,  0,    0.10, 0.30);   // ミ（短め・軽く）
-    tone(880,  0.13, 0.10, 0.30);   // ラ（中間音を追加）
-    tone(1047, 0.26, 0.20, 0.38);   // 高ド（やや長め・余韻）
-    break;
-
-  // credit: 硬い「ピッピッ→ピーン」端末っぽい質感はそのままに
-  // 少しテンポを上げてレスポンス感を強調
-  case 'credit':
-    tone(1200, 0,    0.07, 0.28);
-    tone(1200, 0.09, 0.07, 0.28);
-    tone(1650, 0.19, 0.20, 0.42);   // 最終音を1600→1650に上げて明確な完了感
-    break;
-
-  // iD: 公式「タントン」= 低め→高めの2音、柔らかく沈み込む感じ
-  // 「タン」は重め、「トン」は少し高く短く跳ねる
-  case 'id':
-    tone(520,  0,    0.14, 0.38);   // タン（少し重め・長め）
-    tone(780,  0.20, 0.12, 0.35);   // トン（跳ねる感じ・短め）
-    break;
-
-  // 楽天ペイ: 「ポポポン」明るい3音上昇
-  // C5→E5→G5のメジャー3和音トーン（明るく親しみやすい）
-  case 'rakuten':
-    tone(523,  0,    0.10, 0.32);   // ド
-    tone(659,  0.13, 0.10, 0.32);   // ミ
-    tone(784,  0.26, 0.10, 0.35);   // ソ
-    tone(1047, 0.38, 0.22, 0.40);   // 高ド（オクターブ上で締める）
-    break;
-
-  // au PAY: 「ピンポン」系2音。やや明るい上昇感
-  // G5→E6 くらいのイメージ（軽快・コンパクト）
-  case 'aupay':
-    tone(784,  0,    0.09, 0.32);   // ソ（やや低めから）
-    tone(1319, 0.13, 0.18, 0.40);   // 高ミ（高めに跳ねて完了感）
-    break;
-
-  // Mastercard: 公式ソニックブランドは落ち着いた完了音
-  // A3→C#4 の柔らかい上昇（信頼感・安心感）
-  case 'master':
-    tone(440,  0,    0.18, 0.28);   // ラ（伸ばし気味）
-    tone(277,  0.10, 0.08, 0.15);   // ド#（低いアクセント・重ね気味）
-    tone(554,  0.22, 0.28, 0.42);   // 高ド#（解決・完了）
-    break;
-
-  // default: 汎用の「決済完了」らしい上昇5音フレーズ（変更なし・ほぼ良好）
-  default:
-    tone(1000, 0,    0.08, 0.28);
-    tone(1500, 0.10, 0.08, 0.28);
-    tone(523,  0.26, 0.16, 0.32);
-    tone(659,  0.40, 0.16, 0.35);
-    tone(784,  0.54, 0.26, 0.42);
-}
-}
 
   // カメラ起動（インカメラ）
   async function startCamera() {
@@ -667,11 +637,14 @@
     setTimeout(() => nfc.classList.remove('pulse'), 400);
 
     const usedType = beepCashless();
+    const info = PAY_INFO[usedType];
 
     setTimeout(() => {
-      document.getElementById('successAmount').textContent  = '¥' + total.toLocaleString();
-      document.getElementById('successSub').textContent     = itemCount + '点のおかいもの';
-      document.getElementById('successPayType').textContent = '💳 ' + PAY_LABELS[usedType];
+      document.getElementById('successAmount').textContent = '¥' + total.toLocaleString();
+      document.getElementById('successSub').textContent    = itemCount + '点のおかいもの';
+      const logoEl = document.getElementById('successPayLogo');
+      logoEl.src = info.logo;
+      logoEl.alt = info.label;
       document.getElementById('clSuccess').classList.add('show');
     }, 900);
   }
@@ -689,7 +662,7 @@
 
   function cancelCheckout() {
     selectedPay = null;
-    document.querySelectorAll('.pay-chip').forEach(c => c.classList.remove('selected'));
+    document.querySelectorAll('.pay-logo-btn').forEach(c => c.classList.remove('selected'));
     document.getElementById('cashlessScreen').classList.remove('show');
     mode = 'scan';
     isDark = false;
@@ -699,7 +672,7 @@
   function resetAll() {
     total = 0; itemCount = 0; historyArr = [];
     selectedPay = null;
-    document.querySelectorAll('.pay-chip').forEach(c => c.classList.remove('selected'));
+    document.querySelectorAll('.pay-logo-btn').forEach(c => c.classList.remove('selected'));
     document.getElementById('totalAmount').textContent = '0';
     document.getElementById('itemCount').textContent   = '0';
     document.getElementById('historyRows').innerHTML   =
