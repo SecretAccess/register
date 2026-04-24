@@ -3,209 +3,425 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>こどもレジ</title>
+  <title>セルフレジ</title>
   <meta name="apple-mobile-web-app-capable" content="yes"/>
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
-  <meta name="apple-mobile-web-app-title" content="こどもレジ"/>
+  <meta name="apple-mobile-web-app-status-bar-style" content="default"/>
+  <meta name="apple-mobile-web-app-title" content="セルフレジ"/>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
+
     body {
-      background: #1a1a2e;
-      color: #fff;
-      font-family: -apple-system, sans-serif;
+      background: #f0f2f5;
+      color: #1a1a1a;
+      font-family: -apple-system, 'Helvetica Neue', sans-serif;
       min-height: 100vh;
       display: flex;
       flex-direction: column;
       align-items: center;
-      overflow: hidden;
     }
 
-    /* ヘッダー */
+    /* ── ヘッダー ── */
     .header {
       width: 100%;
-      padding: 20px 24px 12px;
-      background: linear-gradient(180deg, #16213e 0%, transparent 100%);
-      text-align: center;
+      background: #1a5276;
+      padding: 0 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 52px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+      position: sticky;
+      top: 0;
+      z-index: 50;
     }
-    .header h1 { font-size: 22px; font-weight: 800; letter-spacing: 2px; color: #fff; }
-    .header h1 span { color: #f9ca24; }
+    .header-logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .header-logo-icon {
+      width: 32px; height: 32px;
+      background: #f39c12;
+      border-radius: 6px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px;
+    }
+    .header-logo-text {
+      font-size: 16px;
+      font-weight: 800;
+      color: #fff;
+      letter-spacing: 1px;
+    }
+    .header-logo-text span { color: #f39c12; }
+    .header-time {
+      font-size: 13px;
+      color: rgba(255,255,255,0.7);
+      font-variant-numeric: tabular-nums;
+    }
+    .header-lane {
+      font-size: 12px;
+      color: rgba(255,255,255,0.5);
+    }
 
-    /* カメラ */
+    /* ── カメラ ── */
+    .camera-section {
+      width: 100%;
+      max-width: 480px;
+      background: #fff;
+      border-bottom: 3px solid #1a5276;
+    }
+    .camera-header {
+      background: #1a5276;
+      padding: 8px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .camera-header-title {
+      font-size: 12px;
+      color: rgba(255,255,255,0.8);
+      font-weight: 600;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
+    .camera-status {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      color: #2ecc71;
+      font-weight: 600;
+    }
+    .status-dot {
+      width: 7px; height: 7px;
+      background: #2ecc71;
+      border-radius: 50%;
+      animation: blink 1.5s ease-in-out infinite;
+    }
+    @keyframes blink {
+      0%,100% { opacity: 1; }
+      50% { opacity: 0.3; }
+    }
+
     .camera-wrap {
       position: relative;
       width: 100%;
-      max-width: 420px;
       aspect-ratio: 4/3;
-      overflow: hidden;
-      border-radius: 0 0 32px 32px;
       background: #000;
+      overflow: hidden;
     }
     video { width: 100%; height: 100%; object-fit: cover; display: block; }
     canvas#diffCanvas { display: none; }
 
+    /* スキャン枠 */
     .scan-frame {
       position: absolute; inset: 0;
       display: flex; align-items: center; justify-content: center;
       pointer-events: none;
     }
-    .scan-box { width: 160px; height: 160px; position: relative; }
-    .scan-box::before, .scan-box::after, .scan-box .corner-bl, .scan-box .corner-br {
+    .scan-box { width: 180px; height: 180px; position: relative; }
+    .scan-box::before, .scan-box::after,
+    .scan-box .corner-bl, .scan-box .corner-br {
       content: ''; position: absolute;
-      width: 32px; height: 32px;
-      border-color: #f9ca24; border-style: solid;
+      width: 28px; height: 28px;
+      border-color: #f39c12; border-style: solid;
     }
-    .scan-box::before { top:0; left:0; border-width:4px 0 0 4px; border-radius:4px 0 0 0; }
-    .scan-box::after  { top:0; right:0; border-width:4px 4px 0 0; border-radius:0 4px 0 0; }
-    .scan-box .corner-bl { bottom:0; left:0; border-width:0 0 4px 4px; border-radius:0 0 0 4px; }
-    .scan-box .corner-br { bottom:0; right:0; border-width:0 4px 4px 0; border-radius:0 0 4px 0; }
+    .scan-box::before { top:0; left:0; border-width:3px 0 0 3px; }
+    .scan-box::after  { top:0; right:0; border-width:3px 3px 0 0; }
+    .scan-box .corner-bl { bottom:0; left:0; border-width:0 0 3px 3px; }
+    .scan-box .corner-br { bottom:0; right:0; border-width:0 3px 3px 0; }
     .scan-line {
-      position: absolute; left:10%; width:80%; height:2px;
-      background: linear-gradient(90deg, transparent, #f9ca24, transparent);
+      position: absolute; left:5%; width:90%; height:2px;
+      background: linear-gradient(90deg, transparent, #f39c12, transparent);
       animation: scanMove 2s ease-in-out infinite;
     }
     @keyframes scanMove {
-      0%,100% { top:15%; opacity:0.3; }
-      50% { top:85%; opacity:1; }
+      0%,100% { top:10%; opacity:0.4; }
+      50% { top:90%; opacity:1; }
     }
 
+    /* 明るさバー */
     .brightness-bar-wrap {
-      position: absolute; bottom:16px; left:50%;
+      position: absolute; bottom:10px; left:50%;
       transform: translateX(-50%);
-      width:120px; display:flex; flex-direction:column;
-      align-items:center; gap:4px; pointer-events:none;
+      width:100px; display:flex; flex-direction:column;
+      align-items:center; gap:3px; pointer-events:none;
     }
-    .brightness-label { font-size:10px; color:rgba(255,255,255,0.6); letter-spacing:1px; }
-    .brightness-bar { width:100%; height:4px; background:rgba(255,255,255,0.15); border-radius:4px; overflow:hidden; }
-    .brightness-fill { height:100%; background:#f9ca24; border-radius:4px; transition:width 0.1s; width:50%; }
+    .brightness-label { font-size:9px; color:rgba(255,255,255,0.5); letter-spacing:1px; text-transform:uppercase; }
+    .brightness-bar { width:100%; height:3px; background:rgba(255,255,255,0.15); border-radius:2px; overflow:hidden; }
+    .brightness-fill { height:100%; background:#f39c12; border-radius:2px; transition:width 0.1s; width:50%; }
 
     .flash {
       position:absolute; inset:0;
-      background:rgba(249,202,36,0.35);
-      opacity:0; border-radius:0 0 32px 32px;
-      transition:opacity 0.1s; pointer-events:none;
+      background:rgba(243,156,18,0.4);
+      opacity:0; transition:opacity 0.08s; pointer-events:none;
     }
     .flash.active { opacity:1; }
 
     .price-pop {
-      position:absolute; top:30%; left:50%;
+      position:absolute; top:28%; left:50%;
       transform:translateX(-50%) scale(0);
-      background:#f9ca24; color:#1a1a2e;
-      font-size:28px; font-weight:900;
-      padding:10px 24px; border-radius:50px;
+      background: #1a5276;
+      color:#fff;
+      font-size:24px; font-weight:900;
+      padding:8px 22px; border-radius:6px;
       white-space:nowrap; pointer-events:none;
       opacity:0; z-index:10;
       transition:transform 0.15s cubic-bezier(0.34,1.56,0.64,1), opacity 0.3s;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.3);
     }
     .price-pop.show { transform:translateX(-50%) scale(1); opacity:1; }
-    .price-pop.hide { transform:translateX(-50%) scale(0.8) translateY(-30px); opacity:0; }
+    .price-pop.hide { transform:translateX(-50%) scale(0.8) translateY(-20px); opacity:0; }
 
-    /* パネル */
-    .panel {
-      width:100%; max-width:420px;
-      flex:1; padding:20px 20px 32px;
-      display:flex; flex-direction:column; gap:16px;
-    }
-    .total-card {
-      background:linear-gradient(135deg,#16213e,#0f3460);
-      border-radius:20px; padding:20px 24px;
-      display:flex; align-items:center; justify-content:space-between;
-      box-shadow:0 8px 32px rgba(0,0,0,0.4);
-      border:1px solid rgba(255,255,255,0.08);
-    }
-    .total-label { font-size:13px; color:#aaa; letter-spacing:1px; text-transform:uppercase; margin-bottom:4px; }
-    .total-amount { font-size:42px; font-weight:900; color:#f9ca24; letter-spacing:-1px; transition:transform 0.15s cubic-bezier(0.34,1.56,0.64,1); }
-    .total-amount.bump { transform:scale(1.15); }
-    .total-yen { font-size:22px; color:#f9ca24; font-weight:700; }
-    .item-count { background:rgba(249,202,36,0.15); border-radius:50px; padding:6px 14px; font-size:13px; color:#f9ca24; font-weight:600; }
-
-    .history-wrap {
-      background:rgba(255,255,255,0.04); border-radius:16px;
-      padding:14px 16px; min-height:60px; max-height:120px;
-      overflow-y:auto; border:1px solid rgba(255,255,255,0.06);
-    }
-    .history-title { font-size:11px; color:#666; letter-spacing:1px; text-transform:uppercase; margin-bottom:8px; }
-    .history-items { display:flex; flex-wrap:wrap; gap:6px; }
-    .history-chip {
-      background:rgba(249,202,36,0.12);
-      border:1px solid rgba(249,202,36,0.25);
-      border-radius:50px; padding:4px 12px;
-      font-size:13px; color:#f9ca24; font-weight:600;
-      animation:popIn 0.25s cubic-bezier(0.34,1.56,0.64,1);
-    }
-    @keyframes popIn {
-      from { transform:scale(0); opacity:0; }
-      to   { transform:scale(1); opacity:1; }
+    /* ── メインパネル ── */
+    .main-panel {
+      width: 100%;
+      max-width: 480px;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
     }
 
+    /* 合計エリア */
+    .total-section {
+      background: #fff;
+      padding: 16px 20px;
+      border-bottom: 1px solid #e0e0e0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .total-left {}
+    .total-label-text {
+      font-size: 11px;
+      color: #999;
+      font-weight: 600;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      margin-bottom: 2px;
+    }
+    .total-row {
+      display: flex;
+      align-items: baseline;
+      gap: 6px;
+    }
+    .total-yen-sign {
+      font-size: 20px;
+      font-weight: 700;
+      color: #1a5276;
+    }
+    .total-amount {
+      font-size: 44px;
+      font-weight: 900;
+      color: #1a5276;
+      letter-spacing: -2px;
+      font-variant-numeric: tabular-nums;
+      transition: transform 0.15s cubic-bezier(0.34,1.56,0.64,1);
+    }
+    .total-amount.bump { transform: scale(1.12); }
+    .tax-note {
+      font-size: 11px;
+      color: #bbb;
+      margin-top: 2px;
+    }
+    .item-badge {
+      background: #1a5276;
+      color: #fff;
+      border-radius: 8px;
+      padding: 8px 16px;
+      text-align: center;
+    }
+    .item-badge-num {
+      font-size: 26px;
+      font-weight: 900;
+      line-height: 1;
+    }
+    .item-badge-label {
+      font-size: 10px;
+      color: rgba(255,255,255,0.7);
+      margin-top: 2px;
+    }
+
+    /* 履歴テーブル */
+    .history-section {
+      background: #fff;
+      flex: 1;
+      overflow-y: auto;
+      border-bottom: 1px solid #e0e0e0;
+    }
+    .history-header {
+      display: grid;
+      grid-template-columns: 1fr auto auto;
+      padding: 8px 20px;
+      background: #f7f8fa;
+      border-bottom: 1px solid #e8e8e8;
+      font-size: 11px;
+      color: #999;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      position: sticky;
+      top: 0;
+    }
+    .history-row {
+      display: grid;
+      grid-template-columns: 1fr auto auto;
+      padding: 12px 20px;
+      border-bottom: 1px solid #f0f0f0;
+      align-items: center;
+      animation: slideIn 0.2s ease;
+    }
+    @keyframes slideIn {
+      from { opacity:0; transform:translateX(-10px); }
+      to   { opacity:1; transform:translateX(0); }
+    }
+    .history-row:last-child { border-bottom: none; }
+    .row-name {
+      font-size: 14px;
+      color: #333;
+      font-weight: 500;
+    }
+    .row-num {
+      font-size: 13px;
+      color: #999;
+      text-align: center;
+      padding: 0 16px;
+    }
+    .row-price {
+      font-size: 15px;
+      font-weight: 700;
+      color: #1a5276;
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+    }
+    .history-empty {
+      padding: 32px 20px;
+      text-align: center;
+      color: #ccc;
+      font-size: 14px;
+    }
+    .history-empty-icon { font-size: 36px; margin-bottom: 8px; }
+
+    /* ── お会計ボタン ── */
+    .checkout-section {
+      background: #fff;
+      padding: 16px 20px 32px;
+      display: flex;
+      gap: 10px;
+    }
+    .cancel-btn {
+      flex: 1;
+      background: #f0f0f0;
+      color: #666;
+      border: none;
+      border-radius: 10px;
+      font-size: 15px;
+      font-weight: 700;
+      padding: 16px;
+      cursor: pointer;
+    }
     .checkout-btn {
-      width:100%;
-      background:linear-gradient(135deg,#f9ca24,#f0932b);
-      color:#1a1a2e; border:none; border-radius:18px;
-      font-size:20px; font-weight:900; padding:18px;
-      cursor:pointer; letter-spacing:2px;
-      box-shadow:0 8px 24px rgba(249,202,36,0.35);
-      transition:transform 0.1s, box-shadow 0.1s;
+      flex: 2;
+      background: #e74c3c;
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      font-size: 17px;
+      font-weight: 900;
+      padding: 16px;
+      cursor: pointer;
+      letter-spacing: 1px;
+      box-shadow: 0 4px 16px rgba(231,76,60,0.35);
+      transition: transform 0.1s;
     }
-    .checkout-btn:active { transform:scale(0.97); }
+    .checkout-btn:active { transform: scale(0.97); }
 
     /* ── キャッシュレス画面 ── */
     .cashless-screen {
       display: none;
       position: fixed;
       inset: 0;
-      background: #0a0a1a;
+      background: #f0f2f5;
       flex-direction: column;
       align-items: center;
-      justify-content: center;
       z-index: 200;
-      gap: 0;
+      overflow-y: auto;
     }
     .cashless-screen.show { display: flex; }
 
-    /* 上部 金額エリア */
-    .cl-top {
+    .cl-header {
       width: 100%;
-      padding: 48px 32px 32px;
-      text-align: center;
-      background: linear-gradient(180deg, #16213e 0%, #0a0a1a 100%);
+      background: #1a5276;
+      padding: 14px 20px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
     }
-    .cl-label {
-      font-size: 13px;
-      color: #666;
-      letter-spacing: 2px;
-      text-transform: uppercase;
-      margin-bottom: 12px;
-    }
-    .cl-amount {
-      font-size: 56px;
-      font-weight: 900;
+    .cl-header-title {
+      font-size: 16px;
+      font-weight: 800;
       color: #fff;
-      letter-spacing: -2px;
+      letter-spacing: 1px;
     }
-    .cl-amount span { font-size: 28px; color: #aaa; font-weight: 500; }
-    .cl-items {
-      font-size: 14px;
-      color: #555;
-      margin-top: 8px;
+    .cl-header-sub {
+      font-size: 12px;
+      color: rgba(255,255,255,0.6);
+      margin-top: 2px;
     }
 
-    /* 中央 NFC/タッチエリア */
-    .cl-touch-area {
-      flex: 1;
+    .cl-amount-card {
+      width: calc(100% - 40px);
+      max-width: 440px;
+      margin: 20px auto 0;
+      background: #fff;
+      border-radius: 12px;
+      padding: 24px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+      border: 1px solid #e0e0e0;
+    }
+    .cl-amount-label {
+      font-size: 12px;
+      color: #999;
+      font-weight: 700;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+    .cl-amount-row {
+      display: flex;
+      align-items: baseline;
+      gap: 6px;
+      margin-bottom: 4px;
+    }
+    .cl-yen { font-size: 22px; font-weight: 700; color: #1a5276; }
+    .cl-amount-num {
+      font-size: 52px;
+      font-weight: 900;
+      color: #1a5276;
+      letter-spacing: -2px;
+      font-variant-numeric: tabular-nums;
+    }
+    .cl-amount-items { font-size: 13px; color: #bbb; margin-top: 4px; }
+
+    /* タッチエリア */
+    .cl-touch-card {
+      width: calc(100% - 40px);
+      max-width: 440px;
+      margin: 16px auto 0;
+      background: #fff;
+      border-radius: 12px;
+      padding: 32px 24px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+      border: 1px solid #e0e0e0;
       display: flex;
       flex-direction: column;
       align-items: center;
-      justify-content: center;
-      gap: 24px;
-      width: 100%;
-      padding: 20px;
+      gap: 20px;
     }
 
-    /* 波紋アニメーション */
-    .nfc-ring {
+    .nfc-area {
+      width: 140px; height: 140px;
       position: relative;
-      width: 160px;
-      height: 160px;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -213,77 +429,102 @@
     .ripple {
       position: absolute;
       border-radius: 50%;
-      border: 2px solid rgba(58,130,247,0.5);
+      border: 2px solid rgba(26,82,118,0.3);
       animation: rippleOut 2.4s ease-out infinite;
     }
-    .ripple:nth-child(1) { width:80px; height:80px; animation-delay:0s; }
-    .ripple:nth-child(2) { width:110px; height:110px; animation-delay:0.6s; }
-    .ripple:nth-child(3) { width:140px; height:140px; animation-delay:1.2s; }
-    .ripple:nth-child(4) { width:160px; height:160px; animation-delay:1.8s; }
+    .ripple:nth-child(1) { width:60px; height:60px; animation-delay:0s; }
+    .ripple:nth-child(2) { width:90px; height:90px; animation-delay:0.6s; }
+    .ripple:nth-child(3) { width:118px; height:118px; animation-delay:1.2s; }
+    .ripple:nth-child(4) { width:140px; height:140px; animation-delay:1.8s; }
     @keyframes rippleOut {
-      0%   { opacity:0.8; transform:scale(0.6); }
+      0%   { opacity:0.7; transform:scale(0.6); }
       100% { opacity:0; transform:scale(1); }
     }
-
-    .nfc-icon {
-      width: 72px;
-      height: 72px;
-      background: linear-gradient(135deg, #3a82f7, #1e40af);
+    .nfc-center {
+      width: 64px; height: 64px;
+      background: #1a5276;
       border-radius: 50%;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 32px;
-      box-shadow: 0 8px 32px rgba(58,130,247,0.5);
+      font-size: 28px;
+      box-shadow: 0 6px 24px rgba(26,82,118,0.4);
       z-index: 1;
-      transition: transform 0.15s;
     }
-    .nfc-icon.pulse {
-      animation: nfcPulse 0.3s ease;
-    }
+    .nfc-center.pulse { animation: nfcPulse 0.35s ease; }
     @keyframes nfcPulse {
-      0%   { transform: scale(1); }
-      50%  { transform: scale(1.3); }
-      100% { transform: scale(1); }
+      0%   { transform:scale(1); }
+      50%  { transform:scale(1.3); }
+      100% { transform:scale(1); }
     }
 
-    .cl-touch-text {
+    .cl-touch-title {
       font-size: 18px;
-      font-weight: 700;
-      color: #fff;
-      letter-spacing: 1px;
+      font-weight: 800;
+      color: #1a1a1a;
+      text-align: center;
     }
     .cl-touch-sub {
       font-size: 13px;
-      color: #555;
+      color: #aaa;
       text-align: center;
-      line-height: 1.6;
+      line-height: 1.7;
     }
 
-    /* 支払い方法アイコン */
-    .cl-payment-icons {
-      display: flex;
-      gap: 12px;
-      flex-wrap: wrap;
-      justify-content: center;
-      padding: 0 20px;
+    /* 決済方法 */
+    .cl-pays-card {
+      width: calc(100% - 40px);
+      max-width: 440px;
+      margin: 16px auto 0;
+      background: #fff;
+      border-radius: 12px;
+      padding: 16px 20px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+      border: 1px solid #e0e0e0;
     }
-    .pay-icon {
-      background: rgba(255,255,255,0.06);
-      border: 1px solid rgba(255,255,255,0.1);
+    .cl-pays-label {
+      font-size: 11px;
+      color: #bbb;
+      font-weight: 700;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      margin-bottom: 12px;
+    }
+    .cl-pays-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+    }
+    .pay-chip {
+      background: #f7f8fa;
+      border: 1px solid #e8e8e8;
+      border-radius: 8px;
+      padding: 8px 6px;
+      text-align: center;
+      font-size: 11px;
+      font-weight: 700;
+      color: #555;
+    }
+
+    .cl-cancel-btn {
+      width: calc(100% - 40px);
+      max-width: 440px;
+      margin: 16px auto 40px;
+      background: #fff;
+      border: 1px solid #ddd;
+      color: #999;
       border-radius: 10px;
-      padding: 8px 14px;
-      font-size: 12px;
-      color: #888;
+      padding: 14px;
+      font-size: 15px;
       font-weight: 600;
-      letter-spacing: 0.5px;
+      cursor: pointer;
     }
 
-    /* 決済完了オーバーレイ */
+    /* ── 決済完了 ── */
     .cl-success {
       position: fixed;
       inset: 0;
-      background: rgba(0,0,0,0.85);
+      background: rgba(255,255,255,0.95);
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -292,185 +533,252 @@
       opacity: 0;
       pointer-events: none;
       transition: opacity 0.3s;
-      gap: 20px;
+      gap: 16px;
     }
     .cl-success.show { opacity:1; pointer-events:all; }
 
     .success-circle {
-      width: 120px;
-      height: 120px;
-      background: linear-gradient(135deg, #00c9a7, #0f9e6e);
+      width: 110px; height: 110px;
+      background: #27ae60;
       border-radius: 50%;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 52px;
-      box-shadow: 0 16px 48px rgba(0,201,167,0.5);
+      font-size: 48px;
+      color: #fff;
+      box-shadow: 0 12px 40px rgba(39,174,96,0.4);
       animation: successPop 0.4s cubic-bezier(0.34,1.56,0.64,1);
     }
     @keyframes successPop {
       from { transform:scale(0); }
       to   { transform:scale(1); }
     }
-    .success-title { font-size: 28px; font-weight: 900; color: #fff; }
-    .success-sub { font-size: 15px; color: #aaa; }
-    .success-amount { font-size: 44px; font-weight: 900; color: #00c9a7; }
-
+    .success-title {
+      font-size: 26px; font-weight: 900; color: #1a1a1a;
+    }
+    .success-amount {
+      font-size: 44px; font-weight: 900; color: #27ae60;
+      font-variant-numeric: tabular-nums;
+    }
+    .success-sub { font-size: 14px; color: #aaa; }
+    .success-receipt {
+      background: #f7f8fa;
+      border: 1px solid #e8e8e8;
+      border-radius: 10px;
+      padding: 12px 24px;
+      font-size: 13px;
+      color: #aaa;
+      margin-top: 4px;
+    }
     .success-back-btn {
-      margin-top: 12px;
-      background: rgba(255,255,255,0.1);
-      border: 1px solid rgba(255,255,255,0.2);
+      margin-top: 8px;
+      background: #1a5276;
       color: #fff;
-      border-radius: 14px;
-      padding: 14px 36px;
-      font-size: 16px;
-      font-weight: 700;
+      border: none;
+      border-radius: 12px;
+      padding: 16px 48px;
+      font-size: 17px;
+      font-weight: 800;
       cursor: pointer;
       letter-spacing: 1px;
+      box-shadow: 0 6px 20px rgba(26,82,118,0.3);
     }
 
-    /* キャンセルボタン */
-    .cl-cancel-btn {
-      width: calc(100% - 40px);
-      margin: 0 20px 40px;
-      background: rgba(255,255,255,0.05);
-      border: 1px solid rgba(255,255,255,0.1);
-      color: #666;
-      border-radius: 14px;
-      padding: 14px;
-      font-size: 15px;
-      font-weight: 600;
-      cursor: pointer;
-    }
-
-    /* カメラ起動メッセージ */
+    /* カメラ起動 */
     .cam-msg {
       position:absolute; inset:0;
       display:flex; flex-direction:column;
       align-items:center; justify-content:center;
-      background:#000; color:#aaa; font-size:14px; gap:12px;
-      border-radius:0 0 32px 32px;
+      background:#111; color:#aaa; font-size:14px; gap:12px;
     }
     .cam-msg-icon { font-size:40px; }
     .cam-start-btn {
-      background:#f9ca24; color:#1a1a2e; border:none;
-      border-radius:12px; padding:12px 28px;
-      font-size:16px; font-weight:800; cursor:pointer; margin-top:8px;
+      background:#f39c12; color:#fff; border:none;
+      border-radius:8px; padding:12px 28px;
+      font-size:15px; font-weight:800; cursor:pointer; margin-top:8px;
     }
   </style>
 </head>
 <body>
 
-<!-- ── メイン画面 ── -->
-<div class="header">
-  <h1>🛒 こども<span>レジ</span></h1>
-</div>
-
-<div class="camera-wrap" id="cameraWrap">
-  <video id="video" autoplay playsinline muted></video>
-  <canvas id="diffCanvas"></canvas>
-  <div class="scan-frame">
-    <div class="scan-box">
-      <div class="corner-bl"></div>
-      <div class="corner-br"></div>
-      <div class="scan-line"></div>
+<!-- ── ヘッダー ── -->
+<div class="header" style="max-width:480px; width:100%;">
+  <div class="header-logo">
+    <div class="header-logo-icon">🛒</div>
+    <div>
+      <div class="header-logo-text">SELF <span>CHECKOUT</span></div>
+      <div class="header-lane">レーン 3</div>
     </div>
   </div>
-  <div class="brightness-bar-wrap">
-    <div class="brightness-label">BRIGHTNESS</div>
-    <div class="brightness-bar"><div class="brightness-fill" id="brightnessFill"></div></div>
-  </div>
-  <div class="flash" id="flash"></div>
-  <div class="price-pop" id="pricePop"></div>
-  <div class="cam-msg" id="camMsg">
-    <div class="cam-msg-icon">📷</div>
-    <div>カメラを使って商品をスキャンします</div>
-    <button class="cam-start-btn" onclick="startCamera()">カメラをスタート</button>
-  </div>
+  <div class="header-time" id="headerTime">00:00</div>
 </div>
 
-<div class="panel">
-  <div class="total-card">
-    <div>
-      <div class="total-label">合計金額</div>
-      <div style="display:flex;align-items:baseline;gap:4px;">
-        <div class="total-amount" id="totalAmount">0</div>
-        <div class="total-yen">円</div>
+<!-- ── カメラ ── -->
+<div class="camera-section">
+  <div class="camera-header">
+    <div class="camera-header-title">スキャンエリア</div>
+    <div class="camera-status">
+      <div class="status-dot"></div>
+      <span id="camStatusText">起動中...</span>
+    </div>
+  </div>
+  <div class="camera-wrap" id="cameraWrap">
+    <video id="video" autoplay playsinline muted></video>
+    <canvas id="diffCanvas"></canvas>
+    <div class="scan-frame">
+      <div class="scan-box">
+        <div class="corner-bl"></div>
+        <div class="corner-br"></div>
+        <div class="scan-line"></div>
       </div>
     </div>
-    <div class="item-count" id="itemCount">0 点</div>
-  </div>
-  <div class="history-wrap">
-    <div class="history-title">スキャン履歴</div>
-    <div class="history-items" id="historyItems">
-      <span style="color:#444;font-size:13px;">商品をかざしてください</span>
+    <div class="brightness-bar-wrap">
+      <div class="brightness-label">SENSOR</div>
+      <div class="brightness-bar"><div class="brightness-fill" id="brightnessFill"></div></div>
+    </div>
+    <div class="flash" id="flash"></div>
+    <div class="price-pop" id="pricePop"></div>
+    <div class="cam-msg" id="camMsg">
+      <div class="cam-msg-icon">📷</div>
+      <div>カメラを起動してください</div>
+      <button class="cam-start-btn" onclick="startCamera()">スキャン開始</button>
     </div>
   </div>
-  <button class="checkout-btn" onclick="goCheckout()">🛍 お会計</button>
+</div>
+
+<!-- ── メインパネル ── -->
+<div class="main-panel">
+
+  <!-- 合計 -->
+  <div class="total-section">
+    <div class="total-left">
+      <div class="total-label-text">お支払い合計</div>
+      <div class="total-row">
+        <div class="total-yen-sign">¥</div>
+        <div class="total-amount" id="totalAmount">0</div>
+      </div>
+      <div class="tax-note">（税込）</div>
+    </div>
+    <div class="item-badge">
+      <div class="item-badge-num" id="itemCount">0</div>
+      <div class="item-badge-label">点</div>
+    </div>
+  </div>
+
+  <!-- 履歴テーブル -->
+  <div class="history-section" id="historySection">
+    <div class="history-header">
+      <span>商品</span>
+      <span>数量</span>
+      <span>金額</span>
+    </div>
+    <div id="historyRows">
+      <div class="history-empty">
+        <div class="history-empty-icon">🛍</div>
+        <div>商品をかざしてください</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- お会計 -->
+  <div class="checkout-section">
+    <button class="cancel-btn" onclick="resetAll()">クリア</button>
+    <button class="checkout-btn" onclick="goCheckout()">💳 お会計へ進む</button>
+  </div>
 </div>
 
 <!-- ── キャッシュレス画面 ── -->
 <div class="cashless-screen" id="cashlessScreen">
-  <div class="cl-top">
-    <div class="cl-label">お支払い金額</div>
-    <div class="cl-amount" id="clAmount">0<span> 円</span></div>
-    <div class="cl-items" id="clItems">0点のおかいもの</div>
+  <div class="cl-header" style="width:100%;">
+    <div>
+      <div class="cl-header-title">💳 キャッシュレス決済</div>
+      <div class="cl-header-sub">カードまたはスマートフォンをかざしてください</div>
+    </div>
   </div>
 
-  <div class="cl-touch-area">
-    <div class="nfc-ring">
-      <div class="ripple"></div>
-      <div class="ripple"></div>
-      <div class="ripple"></div>
-      <div class="ripple"></div>
-      <div class="nfc-icon" id="nfcIcon">📲</div>
+  <div class="cl-amount-card">
+    <div class="cl-amount-label">お支払い金額</div>
+    <div class="cl-amount-row">
+      <div class="cl-yen">¥</div>
+      <div class="cl-amount-num" id="clAmount">0</div>
     </div>
-    <div class="cl-touch-text">カードをかざしてください</div>
+    <div class="cl-amount-items" id="clItems">0点のおかいもの・税込</div>
+  </div>
+
+  <div class="cl-touch-card">
+    <div class="nfc-area">
+      <div class="ripple"></div>
+      <div class="ripple"></div>
+      <div class="ripple"></div>
+      <div class="ripple"></div>
+      <div class="nfc-center" id="nfcIcon">📲</div>
+    </div>
+    <div class="cl-touch-title">ここにかざしてください</div>
     <div class="cl-touch-sub">
-      ICカード・スマホ決済<br>どちらでもOK
+      ICカード・QRコード・スマホ決済<br>すべてご利用いただけます
     </div>
   </div>
 
-  <div class="cl-payment-icons">
-    <div class="pay-icon">Suica</div>
-    <div class="pay-icon">PayPay</div>
-    <div class="pay-icon">iD</div>
-    <div class="pay-icon">QuicPay</div>
-    <div class="pay-icon">VISA</div>
+  <div class="cl-pays-card">
+    <div class="cl-pays-label">ご利用可能な決済方法</div>
+    <div class="cl-pays-grid">
+      <div class="pay-chip">Suica</div>
+      <div class="pay-chip">PayPay</div>
+      <div class="pay-chip">iD</div>
+      <div class="pay-chip">QUICPay</div>
+      <div class="pay-chip">VISA</div>
+      <div class="pay-chip">Master</div>
+      <div class="pay-chip">楽天Pay</div>
+      <div class="pay-chip">au PAY</div>
+    </div>
   </div>
 
-  <button class="cl-cancel-btn" onclick="cancelCheckout()">← もどる</button>
+  <button class="cl-cancel-btn" onclick="cancelCheckout()">← スキャン画面にもどる</button>
 </div>
 
 <!-- ── 決済完了 ── -->
 <div class="cl-success" id="clSuccess">
   <div class="success-circle">✓</div>
-  <div class="success-title">決済完了！</div>
-  <div class="success-amount" id="successAmount">0円</div>
-  <div class="success-sub">ありがとうございました！</div>
-  <button class="success-back-btn" onclick="resetAll()">またかいもの！</button>
+  <div class="success-title">決済が完了しました</div>
+  <div class="success-amount" id="successAmount">¥0</div>
+  <div class="success-sub" id="successSub">0点のおかいもの</div>
+  <div class="success-receipt">🧾 領収書は不要です</div>
+  <button class="success-back-btn" onclick="resetAll()">🛒 最初にもどる</button>
 </div>
 
 <script>
   const PRICES = [50, 100, 100, 100, 150, 200, 200, 300, 500, 1000];
+  const ITEM_NAMES = [
+    'おかし', 'ジュース', 'パン', 'おにぎり', 'チョコ',
+    'アイス', 'ガム', 'ポテチ', 'ヨーグルト', 'サンドイッチ'
+  ];
 
   let total = 0;
   let itemCount = 0;
   let historyArr = [];
   let cooldown = false;
   let isDark = false;
-  let mode = 'scan'; // 'scan' | 'cashless'
+  let mode = 'scan';
+
+  // 時計
+  function updateClock() {
+    const now = new Date();
+    const h = String(now.getHours()).padStart(2,'0');
+    const m = String(now.getMinutes()).padStart(2,'0');
+    document.getElementById('headerTime').textContent = h + ':' + m;
+  }
+  updateClock();
+  setInterval(updateClock, 10000);
 
   // ── スキャン音（ピッ）──
   function beepScan() {
     const ctx = new (window.AudioContext || window.webkitAudioContext)();
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();
-    osc.connect(gain);
-    gain.connect(ctx.destination);
+    osc.connect(gain); gain.connect(ctx.destination);
     osc.type = 'sine';
     osc.frequency.setValueAtTime(2800, ctx.currentTime);
-    gain.gain.setValueAtTime(0.0, ctx.currentTime);
+    gain.gain.setValueAtTime(0, ctx.currentTime);
     gain.gain.linearRampToValueAtTime(0.5, ctx.currentTime + 0.005);
     gain.gain.setValueAtTime(0.5, ctx.currentTime + 0.04);
     gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.1);
@@ -478,15 +786,13 @@
     osc.stop(ctx.currentTime + 0.1);
   }
 
-  // ── キャッシュレス決済音（ピポッ ＋ 完了チャイム）──
+  // ── キャッシュレス決済音 ──
   function beepCashless() {
     const ctx = new (window.AudioContext || window.webkitAudioContext)();
-
-    function tone(freq, start, dur, vol = 0.4) {
+    function tone(freq, start, dur, vol=0.4) {
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
-      osc.connect(gain);
-      gain.connect(ctx.destination);
+      osc.connect(gain); gain.connect(ctx.destination);
       osc.type = 'sine';
       osc.frequency.setValueAtTime(freq, ctx.currentTime + start);
       gain.gain.setValueAtTime(0, ctx.currentTime + start);
@@ -496,11 +802,8 @@
       osc.start(ctx.currentTime + start);
       osc.stop(ctx.currentTime + start + dur);
     }
-
-    // ピポッ（受付音）
-    tone(1000, 0,    0.08, 0.3);
-    tone(1500, 0.1,  0.08, 0.3);
-    // 完了チャイム（ドミソ）
+    tone(1000, 0,   0.08, 0.3);
+    tone(1500, 0.1, 0.08, 0.3);
     tone(523,  0.28, 0.18, 0.35);
     tone(659,  0.42, 0.18, 0.35);
     tone(784,  0.56, 0.28, 0.4);
@@ -510,11 +813,12 @@
   async function startCamera() {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: 'user', width: 320, height: 240 }
+        video: { facingMode: 'user', width:320, height:240 }
       });
       const video = document.getElementById('video');
       video.srcObject = stream;
       document.getElementById('camMsg').style.display = 'none';
+      document.getElementById('camStatusText').textContent = 'スキャン待機中';
       video.addEventListener('play', startDetection);
     } catch(e) {
       alert('カメラの許可をしてください');
@@ -526,18 +830,16 @@
     const video = document.getElementById('video');
     const canvas = document.getElementById('diffCanvas');
     const ctx = canvas.getContext('2d');
-    canvas.width = 80;
-    canvas.height = 60;
+    canvas.width = 80; canvas.height = 60;
 
     const DARK_THRESHOLD   = 40;
     const BRIGHT_THRESHOLD = 70;
 
     function detect() {
       if (video.paused || video.ended) { requestAnimationFrame(detect); return; }
-
       ctx.drawImage(video, 0, 0, 80, 60);
       const frame = ctx.getImageData(0, 0, 80, 60);
-      const data  = frame.data;
+      const data = frame.data;
 
       let sum = 0;
       for (let i = 0; i < data.length; i += 4) {
@@ -545,79 +847,66 @@
       }
       const brightness = sum / (data.length / 4);
 
-      // インジケーター（スキャン画面のみ表示）
-      const pct = Math.min(100, (brightness / 255) * 100);
+      const pct = Math.min(100, (brightness/255)*100);
       const fill = document.getElementById('brightnessFill');
       if (fill) fill.style.width = pct + '%';
 
       if (!isDark && brightness < DARK_THRESHOLD && !cooldown) {
         isDark = true;
-        if (mode === 'scan') {
-          onScanned();
-        } else if (mode === 'cashless') {
-          onCashlessPay();
-        }
+        if (mode === 'scan') onScanned();
+        else if (mode === 'cashless') onCashlessPay();
       }
-      if (isDark && brightness > BRIGHT_THRESHOLD) {
-        isDark = false;
-      }
+      if (isDark && brightness > BRIGHT_THRESHOLD) isDark = false;
 
       requestAnimationFrame(detect);
     }
     detect();
   }
 
-  // ── スキャン時 ──
+  // ── スキャン ──
   function onScanned() {
     cooldown = true;
     beepScan();
 
     const price = PRICES[Math.floor(Math.random() * PRICES.length)];
+    const name  = ITEM_NAMES[Math.floor(Math.random() * ITEM_NAMES.length)];
     total += price;
     itemCount++;
-    historyArr.push(price);
+    historyArr.push({ name, price });
 
     updateTotal();
     showPricePop(price);
     showFlash();
-    addHistoryChip(price);
+    addHistoryRow(name, price);
 
     setTimeout(() => { cooldown = false; }, 1500);
   }
 
-  // ── キャッシュレス決済時 ──
+  // ── キャッシュレス決済 ──
   function onCashlessPay() {
     cooldown = true;
-
-    // NFCアイコン演出
     const nfc = document.getElementById('nfcIcon');
     nfc.classList.add('pulse');
     setTimeout(() => nfc.classList.remove('pulse'), 400);
-
     beepCashless();
-
-    // 少し待って完了画面
     setTimeout(() => {
-      document.getElementById('successAmount').textContent =
-        total.toLocaleString() + '円';
+      document.getElementById('successAmount').textContent = '¥' + total.toLocaleString();
+      document.getElementById('successSub').textContent = itemCount + '点のおかいもの';
       document.getElementById('clSuccess').classList.add('show');
     }, 900);
   }
 
-  // ── お会計ボタン ──
+  // ── お会計へ ──
   function goCheckout() {
     if (itemCount === 0) return;
-    document.getElementById('clAmount').innerHTML =
-      total.toLocaleString() + '<span> 円</span>';
-    document.getElementById('clItems').textContent =
-      itemCount + '点のおかいもの';
+    document.getElementById('clAmount').textContent = total.toLocaleString();
+    document.getElementById('clItems').textContent = itemCount + '点のおかいもの・税込';
     document.getElementById('cashlessScreen').classList.add('show');
     mode = 'cashless';
     isDark = false;
     cooldown = false;
   }
 
-  // ── もどる ──
   function cancelCheckout() {
     document.getElementById('cashlessScreen').classList.remove('show');
     mode = 'scan';
@@ -625,18 +914,15 @@
     cooldown = false;
   }
 
-  // ── リセット ──
   function resetAll() {
     total = 0; itemCount = 0; historyArr = [];
     document.getElementById('totalAmount').textContent = '0';
-    document.getElementById('itemCount').textContent = '0 点';
-    document.getElementById('historyItems').innerHTML =
-      '<span style="color:#444;font-size:13px;">商品をかざしてください</span>';
+    document.getElementById('itemCount').textContent = '0';
+    document.getElementById('historyRows').innerHTML =
+      '<div class="history-empty"><div class="history-empty-icon">🛍</div><div>商品をかざしてください</div></div>';
     document.getElementById('cashlessScreen').classList.remove('show');
     document.getElementById('clSuccess').classList.remove('show');
-    mode = 'scan';
-    isDark = false;
-    cooldown = false;
+    mode = 'scan'; isDark = false; cooldown = false;
   }
 
   function updateTotal() {
@@ -646,12 +932,12 @@
     void el.offsetWidth;
     el.classList.add('bump');
     setTimeout(() => el.classList.remove('bump'), 200);
-    document.getElementById('itemCount').textContent = itemCount + ' 点';
+    document.getElementById('itemCount').textContent = itemCount;
   }
 
   function showPricePop(price) {
     const pop = document.getElementById('pricePop');
-    pop.textContent = '+' + price.toLocaleString() + '円';
+    pop.textContent = '+¥' + price.toLocaleString();
     pop.className = 'price-pop show';
     setTimeout(() => { pop.className = 'price-pop hide'; }, 800);
     setTimeout(() => { pop.className = 'price-pop'; }, 1100);
@@ -660,16 +946,20 @@
   function showFlash() {
     const flash = document.getElementById('flash');
     flash.classList.add('active');
-    setTimeout(() => flash.classList.remove('active'), 200);
+    setTimeout(() => flash.classList.remove('active'), 150);
   }
 
-  function addHistoryChip(price) {
-    const wrap = document.getElementById('historyItems');
+  function addHistoryRow(name, price) {
+    const wrap = document.getElementById('historyRows');
     if (historyArr.length === 1) wrap.innerHTML = '';
-    const chip = document.createElement('div');
-    chip.className = 'history-chip';
-    chip.textContent = price.toLocaleString() + '円';
-    wrap.appendChild(chip);
+    const row = document.createElement('div');
+    row.className = 'history-row';
+    row.innerHTML = `
+      <div class="row-name">${name}</div>
+      <div class="row-num">×1</div>
+      <div class="row-price">¥${price.toLocaleString()}</div>
+    `;
+    wrap.appendChild(row);
     wrap.scrollTop = wrap.scrollHeight;
   }
 </script>
