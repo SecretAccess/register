@@ -411,21 +411,9 @@
 
 <!-- キャッシュレス画面 -->
 <div class="cashless-screen" id="cashlessScreen">
-  <div class="cl-header" style="width:100%;">
-    <div class="cl-header-title">💳 キャッシュレス決済</div>
-    <div class="cl-header-sub">カードまたはスマートフォンをかざしてください</div>
-  </div>
 
-  <div class="cl-amount-card">
-    <div class="cl-amount-label">お支払い金額</div>
-    <div class="cl-amount-row">
-      <div class="cl-yen">¥</div>
-      <div class="cl-amount-num" id="clAmount">0</div>
-    </div>
-    <div class="cl-amount-items" id="clItems">0点のおかいもの・税込</div>
-  </div>
-
-  <div class="cl-touch-card">
+  <!-- ① ここにかざしてください（一番上） -->
+  <div class="cl-touch-card" style="margin-top:20px;">
     <div class="nfc-area">
       <div class="ripple"></div>
       <div class="ripple"></div>
@@ -439,7 +427,7 @@
     </div>
   </div>
 
-  <!-- ロゴ選択 -->
+  <!-- ② 決済方法を選ぶ -->
   <div class="cl-pays-card">
     <div class="cl-pays-label">決済方法を選ぶ（省略可・ランダム）</div>
     <div class="cl-pays-grid">
@@ -466,8 +454,19 @@
     </div>
   </div>
 
+  <!-- ③ お支払い金額 -->
+  <div class="cl-amount-card">
+    <div class="cl-amount-label">お支払い金額</div>
+    <div class="cl-amount-row">
+      <div class="cl-yen">¥</div>
+      <div class="cl-amount-num" id="clAmount">0</div>
+    </div>
+    <div class="cl-amount-items" id="clItems">0点のおかいもの・税込</div>
+  </div>
+
   <button class="cl-cancel-btn" onclick="cancelCheckout()">← スキャン画面にもどる</button>
 </div>
+
 
 <!-- 決済完了 -->
 <div class="cl-success" id="clSuccess">
