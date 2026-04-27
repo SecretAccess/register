@@ -3,10 +3,10 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>セルフレジ</title>
+  <title>クサカマート</title>
   <meta name="apple-mobile-web-app-capable" content="yes"/>
   <meta name="apple-mobile-web-app-status-bar-style" content="default"/>
-  <meta name="apple-mobile-web-app-title" content="セルフレジ"/>
+  <meta name="apple-mobile-web-app-title" content="クサカマート"/>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -177,7 +177,6 @@
     .history-empty { padding: 32px 20px; text-align: center; color: #ccc; font-size: 14px; }
     .history-empty-icon { font-size: 36px; margin-bottom: 8px; }
 
-    /* ── キャッシュレス画面 ── */
     .cashless-screen {
       display: none; position: fixed; inset: 0;
       background: #f0f2f5;
@@ -226,7 +225,6 @@
     .cl-touch-title { font-size: 17px; font-weight: 800; color: #1a1a1a; text-align: center; }
     .cl-touch-sub { font-size: 13px; color: #aaa; text-align: center; line-height: 1.7; }
 
-    /* ── ロゴ選択グリッド ── */
     .cl-pays-card {
       width: calc(100% - 40px); max-width: 440px;
       margin: 16px auto 0; background: #fff;
@@ -243,7 +241,6 @@
       grid-template-columns: repeat(3, 1fr);
       gap: 12px;
     }
-    /* 5番目だけ中央に */
     .cl-pays-grid .pay-logo-btn:nth-child(4) { grid-column: 1; }
     .cl-pays-grid .pay-logo-btn:nth-child(5) { grid-column: 2; }
 
@@ -265,16 +262,8 @@
       background: #eaf2fb;
       box-shadow: 0 0 0 1px #1a5276;
     }
-    .pay-logo-btn img {
-      width: 72px;
-      height: 36px;
-      object-fit: contain;
-    }
-    .pay-logo-name {
-      font-size: 10px;
-      color: #999;
-      font-weight: 600;
-    }
+    .pay-logo-btn img { width: 72px; height: 36px; object-fit: contain; }
+    .pay-logo-name { font-size: 10px; color: #999; font-weight: 600; }
     .pay-logo-btn.selected .pay-logo-name { color: #1a5276; }
 
     .cl-cancel-btn {
@@ -285,7 +274,6 @@
       font-size: 15px; font-weight: 600; cursor: pointer;
     }
 
-    /* ── 決済完了 ── */
     .cl-success {
       position: fixed; inset: 0; background: rgba(255,255,255,0.95);
       display: flex; flex-direction: column; align-items: center; justify-content: center;
@@ -303,10 +291,7 @@
     .success-title { font-size: 26px; font-weight: 900; color: #1a1a1a; }
     .success-amount { font-size: 44px; font-weight: 900; color: #27ae60; font-variant-numeric: tabular-nums; }
     .success-sub { font-size: 14px; color: #aaa; }
-    .success-pay-logo {
-      height: 36px;
-      object-fit: contain;
-    }
+    .success-pay-logo { height: 36px; object-fit: contain; }
     .success-receipt { background: #f7f8fa; border: 1px solid #e8e8e8; border-radius: 10px; padding: 12px 24px; font-size: 13px; color: #aaa; }
     .success-back-btn {
       margin-top: 8px; background: #1a5276; color: #fff; border: none;
@@ -334,7 +319,7 @@
   <div class="header-logo">
     <div class="header-logo-icon">🛒</div>
     <div>
-      <div class="header-logo-text">SELF <span>CHECKOUT</span></div>
+      <div class="header-logo-text">KUSAKA <span>MART</span></div>
       <div class="header-lane">レーン 3</div>
     </div>
   </div>
@@ -390,15 +375,13 @@
   </div>
 
   <div class="checkout-section">
-    <button class="cancel-btn" onclick="resetAll()">クリア</button>
-    <button class="checkout-btn" onclick="goCheckout()">💳 お会計へ進む</button>
+    <button class="cancel-btn" onclick="handleCancel()">クリア</button>
+    <button class="checkout-btn" onclick="handleCheckout()">💳 お会計へ進む</button>
   </div>
 
   <div class="history-section">
     <div class="history-header">
-      <span>商品</span>
-      <span>数量</span>
-      <span>金額</span>
+      <span>商品</span><span>数量</span><span>金額</span>
     </div>
     <div id="historyRows">
       <div class="history-empty">
@@ -411,50 +394,37 @@
 
 <!-- キャッシュレス画面 -->
 <div class="cashless-screen" id="cashlessScreen">
-
-  <!-- ① ここにかざしてください（一番上） -->
   <div class="cl-touch-card" style="margin-top:20px;">
     <div class="nfc-area">
-      <div class="ripple"></div>
-      <div class="ripple"></div>
-      <div class="ripple"></div>
-      <div class="ripple"></div>
+      <div class="ripple"></div><div class="ripple"></div>
+      <div class="ripple"></div><div class="ripple"></div>
       <div class="nfc-center" id="nfcIcon">📲</div>
     </div>
     <div class="cl-touch-title">ここにかざしてください</div>
-    <div class="cl-touch-sub">
-      ICカード・QRコード・スマホ決済<br>すべてご利用いただけます
-    </div>
+    <div class="cl-touch-sub">ICカード・QRコード・スマホ決済<br>すべてご利用いただけます</div>
   </div>
 
-  <!-- ② 決済方法を選ぶ -->
   <div class="cl-pays-card">
     <div class="cl-pays-label">決済方法を選ぶ（省略可・ランダム）</div>
     <div class="cl-pays-grid">
-      <div class="pay-logo-btn" onclick="selectPay(this,'paypay')">
-        <img src="paypay.png" alt="PayPay"/>
-        <div class="pay-logo-name">PayPay</div>
+      <div class="pay-logo-btn" onclick="handleSelectPay(this,'paypay')">
+        <img src="paypay.png" alt="PayPay"/><div class="pay-logo-name">PayPay</div>
       </div>
-      <div class="pay-logo-btn" onclick="selectPay(this,'quickpay')">
-        <img src="quickpay.png" alt="QUICPay"/>
-        <div class="pay-logo-name">QUICPay</div>
+      <div class="pay-logo-btn" onclick="handleSelectPay(this,'quickpay')">
+        <img src="quickpay.png" alt="QUICPay"/><div class="pay-logo-name">QUICPay</div>
       </div>
-      <div class="pay-logo-btn" onclick="selectPay(this,'id')">
-        <img src="id.png" alt="iD"/>
-        <div class="pay-logo-name">iD</div>
+      <div class="pay-logo-btn" onclick="handleSelectPay(this,'id')">
+        <img src="id.png" alt="iD"/><div class="pay-logo-name">iD</div>
       </div>
-      <div class="pay-logo-btn" onclick="selectPay(this,'waon')">
-        <img src="waon.png" alt="WAON"/>
-        <div class="pay-logo-name">WAON</div>
+      <div class="pay-logo-btn" onclick="handleSelectPay(this,'waon')">
+        <img src="waon.png" alt="WAON"/><div class="pay-logo-name">WAON</div>
       </div>
-      <div class="pay-logo-btn" onclick="selectPay(this,'applepay')">
-        <img src="applepay.png" alt="Apple Pay"/>
-        <div class="pay-logo-name">Apple Pay</div>
+      <div class="pay-logo-btn" onclick="handleSelectPay(this,'applepay')">
+        <img src="applepay.png" alt="Apple Pay"/><div class="pay-logo-name">Apple Pay</div>
       </div>
     </div>
   </div>
 
-  <!-- ③ お支払い金額 -->
   <div class="cl-amount-card">
     <div class="cl-amount-label">お支払い金額</div>
     <div class="cl-amount-row">
@@ -464,9 +434,8 @@
     <div class="cl-amount-items" id="clItems">0点のおかいもの・税込</div>
   </div>
 
-  <button class="cl-cancel-btn" onclick="cancelCheckout()">← スキャン画面にもどる</button>
+  <button class="cl-cancel-btn" onclick="handleCancelCheckout()">← スキャン画面にもどる</button>
 </div>
-
 
 <!-- 決済完了 -->
 <div class="cl-success" id="clSuccess">
@@ -476,37 +445,51 @@
   <div class="success-sub" id="successSub">0点のおかいもの</div>
   <img class="success-pay-logo" id="successPayLogo" src="" alt=""/>
   <div class="success-receipt">🧾 領収書は不要です</div>
-  <button class="success-back-btn" onclick="resetAll()">🛒 最初にもどる</button>
+  <button class="success-back-btn" onclick="handleReset()">🛒 最初にもどる</button>
 </div>
 
 <script>
   const PRICES     = [50, 100, 100, 100, 150, 200, 200, 300, 500, 1000];
   const ITEM_NAMES = ['食料品', '惣菜', '加工食品', '生鮮食品'];
   const PAY_TYPES  = ['paypay', 'quickpay', 'id', 'waon', 'applepay'];
-
-  const PAY_INFO = {
-    paypay:   { label: 'PayPay',     logo: 'paypay.png',   mp3: 'paypay.mp3'   },
-    quickpay: { label: 'QUICPay',    logo: 'quickpay.png', mp3: 'quicpay.mp3'  },
-    id:       { label: 'iD',         logo: 'id.png',       mp3: 'id.mp3'       },
-    waon:     { label: 'WAON',       logo: 'waon.png',     mp3: 'waon.mp3'     },
-    applepay: { label: 'Apple Pay',  logo: 'applepay.png', mp3: 'applepay.mp3' },
+  const PAY_INFO   = {
+    paypay:   { label: 'PayPay',    logo: 'paypay.png',   mp3: 'paypay.mp3'   },
+    quickpay: { label: 'QUICPay',   logo: 'quickpay.png', mp3: 'quicpay.mp3'  },
+    id:       { label: 'iD',        logo: 'id.png',       mp3: 'id.mp3'       },
+    waon:     { label: 'WAON',      logo: 'waon.png',     mp3: 'waon.mp3'     },
+    applepay: { label: 'Apple Pay', logo: 'applepay.png', mp3: 'applepay.mp3' },
   };
 
-  // mp3を事前ロード
+  // ─── AudioContext 管理 ───────────────────────────────
+  // グローバルに1つだけ保持し、suspendedなら必ずresumeする
+  let _audioCtx = null;
+
+  function getAudioCtx() {
+    if (!_audioCtx) {
+      _audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    }
+    if (_audioCtx.state === 'suspended') {
+      _audioCtx.resume();   // 非同期だが即発行するだけでOK
+    }
+    return _audioCtx;
+  }
+
+  // mp3 を事前ロード
   const MP3_SOUNDS = {};
   Object.keys(PAY_INFO).forEach(key => {
     MP3_SOUNDS[key] = new Audio(PAY_INFO[key].mp3);
   });
 
-  let total = 0;
-  let itemCount = 0;
-  let historyArr = [];
-  let cooldown = false;
-  let isDark = false;
-  let mode = 'scan';
+  // ─── 状態変数 ────────────────────────────────────────
+  let total       = 0;
+  let itemCount   = 0;
+  let historyArr  = [];
+  let cooldown    = false;
+  let isDark      = false;
+  let mode        = 'scan';
   let selectedPay = null;
 
-  // 時計
+  // ─── 時計 ────────────────────────────────────────────
   function updateClock() {
     const now = new Date();
     const h = String(now.getHours()).padStart(2,'0');
@@ -516,7 +499,46 @@
   updateClock();
   setInterval(updateClock, 10000);
 
+  // ─── タップハンドラー（全てgetAudioCtxを頭で呼ぶ） ───
+
+  // スキャン開始ボタン
+  function startCamera() {
+    getAudioCtx(); // ← resume保険
+    _startCamera();
+  }
+
+  // クリアボタン
+  function handleCancel() {
+    getAudioCtx();
+    resetAll();
+  }
+
+  // お会計ボタン
+  function handleCheckout() {
+    getAudioCtx();
+    goCheckout();
+  }
+
   // 決済方法選択
+  function handleSelectPay(el, type) {
+    getAudioCtx();
+    selectPay(el, type);
+  }
+
+  // スキャン画面にもどる
+  function handleCancelCheckout() {
+    getAudioCtx();
+    cancelCheckout();
+  }
+
+  // 最初にもどる
+  function handleReset() {
+    getAudioCtx();
+    resetAll();
+  }
+
+  // ─── 内部ロジック ─────────────────────────────────────
+
   function selectPay(el, type) {
     if (selectedPay === type) {
       selectedPay = null;
@@ -530,13 +552,14 @@
 
   // スキャン音（ピッ）
   function beepScan() {
-    const ctx = new (window.AudioContext || window.webkitAudioContext)();
-    const osc = ctx.createOscillator();
+    const ctx = getAudioCtx(); // ← 共有ctxを使う
+    const osc  = ctx.createOscillator();
     const gain = ctx.createGain();
-    osc.connect(gain); gain.connect(ctx.destination);
+    osc.connect(gain);
+    gain.connect(ctx.destination);
     osc.type = 'sine';
     osc.frequency.setValueAtTime(2800, ctx.currentTime);
-    gain.gain.setValueAtTime(0, ctx.currentTime);
+    gain.gain.setValueAtTime(0,   ctx.currentTime);
     gain.gain.linearRampToValueAtTime(0.5, ctx.currentTime + 0.005);
     gain.gain.setValueAtTime(0.5, ctx.currentTime + 0.04);
     gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.1);
@@ -544,22 +567,26 @@
     osc.stop(ctx.currentTime + 0.1);
   }
 
-  // キャッシュレス決済音（全てmp3）
+  // キャッシュレス決済音（mp3）
   function beepCashless() {
-    const type = selectedPay || PAY_TYPES[Math.floor(Math.random() * PAY_TYPES.length)];
+    getAudioCtx(); // ← resume保険（mp3再生前にも必ず呼ぶ）
+    const type  = selectedPay || PAY_TYPES[Math.floor(Math.random() * PAY_TYPES.length)];
     const audio = MP3_SOUNDS[type];
     if (audio) {
       audio.currentTime = 0;
-      audio.play();
+      // resume完了を待ってからplay
+      _audioCtx.resume().then(() => {
+        audio.play().catch(e => console.warn('mp3再生失敗:', e));
+      });
     }
     return type;
   }
 
-  // カメラ起動（インカメラ）
-  async function startCamera() {
+  // カメラ起動（実体）
+  async function _startCamera() {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: 'user', width:320, height:240 }
+        video: { facingMode: 'user', width: 320, height: 240 }
       });
       const video = document.getElementById('video');
       video.srcObject = stream;
@@ -584,22 +611,20 @@
     function detect() {
       if (video.paused || video.ended) { requestAnimationFrame(detect); return; }
       ctx.drawImage(video, 0, 0, 80, 60);
-      const frame = ctx.getImageData(0, 0, 80, 60);
-      const data  = frame.data;
+      const data = ctx.getImageData(0, 0, 80, 60).data;
 
       let sum = 0;
       for (let i = 0; i < data.length; i += 4) {
-        sum += data[i]*0.299 + data[i+1]*0.587 + data[i+2]*0.114;
+        sum += data[i] * 0.299 + data[i+1] * 0.587 + data[i+2] * 0.114;
       }
       const brightness = sum / (data.length / 4);
-
-      const pct  = Math.min(100, (brightness/255)*100);
+      const pct  = Math.min(100, (brightness / 255) * 100);
       const fill = document.getElementById('brightnessFill');
       if (fill) fill.style.width = pct + '%';
 
       if (!isDark && brightness < DARK_THRESHOLD && !cooldown) {
         isDark = true;
-        if (mode === 'scan')          onScanned();
+        if      (mode === 'scan')     onScanned();
         else if (mode === 'cashless') onCashlessPay();
       }
       if (isDark && brightness > BRIGHT_THRESHOLD) isDark = false;
@@ -609,7 +634,7 @@
     detect();
   }
 
-  // スキャン
+  // スキャン処理
   function onScanned() {
     cooldown = true;
     beepScan();
@@ -628,7 +653,7 @@
     setTimeout(() => { cooldown = false; }, 1500);
   }
 
-  // キャッシュレス決済
+  // キャッシュレス決済処理
   function onCashlessPay() {
     cooldown = true;
     const nfc = document.getElementById('nfcIcon');
@@ -636,7 +661,7 @@
     setTimeout(() => nfc.classList.remove('pulse'), 400);
 
     const usedType = beepCashless();
-    const info = PAY_INFO[usedType];
+    const info     = PAY_INFO[usedType];
 
     setTimeout(() => {
       document.getElementById('successAmount').textContent = '¥' + total.toLocaleString();
@@ -648,7 +673,6 @@
     }, 900);
   }
 
-  // お会計へ
   function goCheckout() {
     if (itemCount === 0) return;
     document.getElementById('clAmount').textContent = total.toLocaleString();
